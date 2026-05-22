@@ -15,6 +15,7 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -31,8 +32,39 @@ function formatMoney(value: number): string {
   }).format(value || 0)
 }
 
+function formatIndianAbbreviation(value: number, withCurrency = false): string {
+  const safeValue = value || 0
+  const absValue = Math.abs(safeValue)
+  const prefix = withCurrency ? '₹' : ''
+
+  if (absValue >= 10_000_000) {
+    return `${prefix}${Math.round(safeValue / 10_000_000)}Cr`
+  }
+
+  if (absValue >= 100_000) {
+    return `${prefix}${Math.round(safeValue / 100_000)}L`
+  }
+
+  if (absValue >= 1_000) {
+    return `${prefix}${Math.round(safeValue / 1_000)}K`
+  }
+
+  return `${prefix}${Math.round(safeValue)}`
+}
+
+interface FinancialRow {
+  code: string
+  name: string
+  sanctioned: number
+  spent: number
+  remaining: number
+}
+
 function normalizeRoadsData(data: unknown) {
   if (Array.isArray(data)) return data
+  if (Array.isArray((data as { data?: unknown } | null | undefined)?.data)) {
+    return (data as { data: unknown[] }).data
+  }
   if (Array.isArray((data as { content?: unknown } | null | undefined)?.content)) {
     return (data as { content: unknown[] }).content
   }
@@ -42,6 +74,7 @@ function normalizeRoadsData(data: unknown) {
 const SAMPLE_ROADS: Road[] = [
   {
     id: 1,
+    roadCode: 'NH-01',
     name: 'Delhi-Meerut Expressway',
     roadType: 'NH',
     contractorName: 'L&T Infra',
@@ -51,6 +84,7 @@ const SAMPLE_ROADS: Road[] = [
   },
   {
     id: 2,
+    roadCode: 'NH-18',
     name: 'Gorakhpur-Basti Highway',
     roadType: 'NH',
     contractorName: 'Tata Projects',
@@ -60,6 +94,7 @@ const SAMPLE_ROADS: Road[] = [
   },
   {
     id: 3,
+    roadCode: 'SH-21',
     name: 'Lucknow-Barabanki Highway',
     roadType: 'SH',
     contractorName: 'Dilip Buildcon',
@@ -69,6 +104,7 @@ const SAMPLE_ROADS: Road[] = [
   },
   {
     id: 4,
+    roadCode: 'MDR-04',
     name: 'Agra-Aligarh Link Road',
     roadType: 'MDR',
     contractorName: 'Shapoorji Pallonji',
@@ -86,47 +122,117 @@ export default function Dashboard() {
   )
   const [roads, setRoads] = useState<Road[]>([])
   const [roadsLoading, setRoadsLoading] = useState(true)
-  const [roadsFallbackNotice, setRoadsFallbackNotice] = useState('')
   const recentComplaints = Array.isArray(recent.data?.content) ? recent.data.content : []
   const recentDataInvalid = !!recent.data && !Array.isArray(recent.data.content)
   const roadData = roads
-  const financialRows = roadData.map((road) => ({
-    name: road.name,
-    sanctioned: road.budgetSanctioned ?? 0,
-    spent: road.budgetSpent ?? 0,
-  }))
+  const financialRows: FinancialRow[] = roadData.map((road) => {
+    const sanctioned = road.budgetSanctioned ?? 0
+    const spent = road.budgetSpent ?? 0
+    const code = road.roadCode?.trim() || road.roadType?.trim() || `Road ${road.id}`
+
+    return {
+      code,
+      name: road.name,
+      sanctioned,
+      spent,
+      remaining: sanctioned - spent,
+    }
+  })
   const totalAllocated = financialRows.reduce((sum, road) => sum + road.sanctioned, 0)
   const totalSpent = financialRows.reduce((sum, road) => sum + road.spent, 0)
+  const skipEveryOtherXAxisLabel = financialRows.length > 6
+
+  function RoadAxisTick({
+    x,
+    y,
+    payload,
+  }: {
+    x?: number
+    y?: number
+    payload?: { index?: number }
+  }) {
+    const row = financialRows[payload?.index ?? 0]
+
+    if (!row) return null
+    if (skipEveryOtherXAxisLabel && (payload?.index ?? 0) % 2 === 1) return null
+
+    return (
+      <g transform={`translate(${x ?? 0},${(y ?? 0) + 6}) rotate(-45)`}>
+        <text textAnchor="end" fill="#334155">
+          <tspan x="0" dy="0" className="fill-slate-900 text-[12px] font-semibold">
+            {row.code}
+          </tspan>
+          <tspan x="0" dy="15" className="fill-brand-700 text-[11px] font-medium">
+            {formatIndianAbbreviation(row.spent, true)}
+          </tspan>
+        </text>
+      </g>
+    )
+  }
+
+  function FinancialTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload?: FinancialRow }> }) {
+    if (!active || !payload?.length) return null
+
+    const row = payload[0]?.payload
+
+    if (!row) return null
+
+    return (
+      <div className="min-w-[260px] rounded-2xl border border-brand-100 bg-white p-4 shadow-xl shadow-violet-100/50">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Financial snapshot</p>
+        <div className="mt-2 space-y-1">
+          <p className="text-base font-semibold text-slate-900">{row.code}</p>
+          <p className="text-sm text-slate-600">{row.name}</p>
+        </div>
+
+        <div className="mt-4 grid gap-2 text-sm">
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-brand-50 px-3 py-2">
+            <span className="text-slate-600">Budget Sanctioned</span>
+            <span className="font-semibold text-brand-900">{formatMoney(row.sanctioned)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-brand-50 px-3 py-2">
+            <span className="text-slate-600">Budget Spent</span>
+            <span className="font-semibold text-brand-900">{formatMoney(row.spent)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-brand-50 px-3 py-2">
+            <span className="text-slate-600">Remaining budget</span>
+            <span className={`font-semibold ${row.remaining >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {formatMoney(row.remaining)}
+            </span>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   useEffect(() => {
     let mounted = true
 
     const loadRoads = async () => {
       setRoadsLoading(true)
-      setRoadsFallbackNotice('')
 
       try {
         const { data } = await api.get<unknown>(API_ROUTES.roads)
+        console.log('Dashboard roads API response:', data)
         const normalized = normalizeRoadsData(data)
 
-        if (!Array.isArray(data) && !Array.isArray((data as { content?: unknown } | null | undefined)?.content)) {
+        if (
+          !Array.isArray(data) &&
+          !Array.isArray((data as { data?: unknown } | null | undefined)?.data) &&
+          !Array.isArray((data as { content?: unknown } | null | undefined)?.content)
+        ) {
           if (mounted) {
             setRoads(SAMPLE_ROADS)
-            setRoadsFallbackNotice('Unable to load data. Using sample data.')
           }
           return
         }
 
         if (mounted) {
           setRoads(normalized.length ? (normalized as Road[]) : SAMPLE_ROADS)
-          if (normalized.length === 0) {
-            setRoadsFallbackNotice('Unable to load data. Using sample data.')
-          }
         }
       } catch {
         if (mounted) {
           setRoads(SAMPLE_ROADS)
-          setRoadsFallbackNotice('Unable to load data. Using sample data.')
         }
       } finally {
         if (mounted) setRoadsLoading(false)
@@ -186,22 +292,47 @@ export default function Dashboard() {
             </div>
           ) : roadData.length ? (
             <div className="h-full">
-              {roadsFallbackNotice && (
-                <p className="mb-3 text-sm font-medium text-amber-700">{roadsFallbackNotice}</p>
-              )}
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={financialRows} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
+                <BarChart data={financialRows} margin={{ top: 24, right: 24, left: 0, bottom: 84 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e9d5ff" />
-                  <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 12 }} interval={0} />
-                  <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} />
+                  <XAxis
+                    dataKey="code"
+                    tick={<RoadAxisTick />}
+                    interval={skipEveryOtherXAxisLabel ? 1 : 0}
+                    height={76}
+                    tickLine={false}
+                    axisLine={{ stroke: '#ddd6fe' }}
+                  />
+                  <YAxis
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    tickFormatter={(value) => formatIndianAbbreviation(Number(value))}
+                    axisLine={{ stroke: '#ddd6fe' }}
+                    tickLine={false}
+                  />
                   <Tooltip
                     cursor={{ fill: 'rgba(124, 58, 237, 0.08)' }}
-                    contentStyle={{ borderRadius: 12, borderColor: '#ddd6fe' }}
-                    formatter={(value) => formatMoney(Number(value))}
+                    content={<FinancialTooltip />}
+                    wrapperStyle={{ outline: 'none' }}
                   />
                   <Legend />
-                  <Bar dataKey="sanctioned" name="Budget Sanctioned" fill="#7c3aed" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="spent" name="Budget Spent" fill="#a78bfa" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="sanctioned" name="Budget Sanctioned" fill="#7c3aed" radius={[8, 8, 0, 0]}>
+                    <LabelList
+                      position="top"
+                      fill="#6d28d9"
+                      fontSize={12}
+                      fontWeight={700}
+                      formatter={(value: number) => formatIndianAbbreviation(Number(value), true)}
+                    />
+                  </Bar>
+                  <Bar dataKey="spent" name="Budget Spent" fill="#a78bfa" radius={[8, 8, 0, 0]}>
+                    <LabelList
+                      position="top"
+                      fill="#7c3aed"
+                      fontSize={12}
+                      fontWeight={700}
+                      formatter={(value: number) => formatIndianAbbreviation(Number(value), true)}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>

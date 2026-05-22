@@ -1,21 +1,46 @@
 import { useEffect, useState } from 'react'
-import { fetchRoads, createRoad, updateRoad, deleteRoad } from '@/api/roads'
+import { api } from '@/api/client'
+import { API_ROUTES } from '@/constants/config'
+import { createRoad, updateRoad, deleteRoad } from '@/api/roads'
 import type { Road } from '@/types/road'
 import { formatDate } from '@/utils/format'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
+import { LoadingState } from '@/components/ui/LoadingState'
+
+function normalizeRoadsResponse(data: unknown): Road[] {
+  if (Array.isArray(data)) return data as Road[]
+  if (Array.isArray((data as { data?: unknown } | null | undefined)?.data)) {
+    return ((data as { data: unknown[] }).data ?? []) as Road[]
+  }
+  if (Array.isArray((data as { content?: unknown } | null | undefined)?.content)) {
+    return ((data as { content: unknown[] }).content ?? []) as Road[]
+  }
+  return []
+}
 
 export default function Roads() {
   const [roads, setRoads] = useState<Road[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState<Partial<Road>>({ roadType: 'NH' })
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
     setLoading(true)
+    setError('')
     try {
-      const data = await fetchRoads()
-      setRoads(data)
+      const { data } = await api.get<unknown>(API_ROUTES.roads)
+      console.log('Roads API response:', data)
+      const normalized = normalizeRoadsResponse(data)
+      setRoads(normalized)
+      if (!normalized.length) {
+        setError('No roads returned from the API.')
+      }
+    } catch (error) {
+      console.error('Failed to load roads:', error)
+      setError('Failed to load roads. Please try again.')
+      setRoads([])
     } finally {
       setLoading(false)
     }
@@ -72,7 +97,9 @@ export default function Roads() {
 
       <div className="mt-6 overflow-auto rounded-xl border border-slate-200 bg-white p-4">
         {loading ? (
-          <p>Loading…</p>
+          <LoadingState message="Loading roads…" />
+        ) : error ? (
+          <p className="text-sm text-rose-600">{error}</p>
         ) : (
           <table className="w-full table-auto">
             <thead>

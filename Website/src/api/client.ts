@@ -3,6 +3,8 @@ import { AUTH_STORAGE_KEY } from '@/constants/config'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
+console.log('[RoadWatch] API base URL:', API_BASE || '(same-origin / empty)')
+
 export const api = axios.create({
   baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },

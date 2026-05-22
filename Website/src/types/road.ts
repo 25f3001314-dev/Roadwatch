@@ -1,5 +1,6 @@
 export interface Road {
   id: number
+  roadCode?: string
   name: string
   roadType?: 'NH' | 'SH' | 'MDR' | string
   contractorName?: string | null

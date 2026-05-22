@@ -1,16 +1,30 @@
 import { useEffect, useState } from 'react'
+import { api } from '@/api/client'
+import { API_ROUTES } from '@/constants/config'
 import {
   createAuthority,
   deleteAuthority,
-  fetchAuthorities as apiFetch,
   Authority as ApiAuthority,
   updateAuthority,
 } from '@/api/authorities'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
+import { LoadingState } from '@/components/ui/LoadingState'
+
+function normalizeAuthoritiesResponse(data: unknown): ApiAuthority[] {
+  if (Array.isArray(data)) return data as ApiAuthority[]
+  if (Array.isArray((data as { data?: unknown } | null | undefined)?.data)) {
+    return ((data as { data: unknown[] }).data ?? []) as ApiAuthority[]
+  }
+  if (Array.isArray((data as { content?: unknown } | null | undefined)?.content)) {
+    return ((data as { content: unknown[] }).content ?? []) as ApiAuthority[]
+  }
+  return []
+}
 
 export default function Authorities() {
   const [authorities, setAuthorities] = useState<ApiAuthority[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<ApiAuthority | null>(null)
   const [form, setForm] = useState<Partial<ApiAuthority>>({})
@@ -18,9 +32,19 @@ export default function Authorities() {
 
   const load = async () => {
     setLoading(true)
+    setError('')
     try {
-      const list = await apiFetch()
-      setAuthorities(list)
+      const { data } = await api.get<unknown>(API_ROUTES.authorities)
+      console.log('Authorities API response:', data)
+      const normalized = normalizeAuthoritiesResponse(data)
+      setAuthorities(normalized)
+      if (!normalized.length) {
+        setError('No authorities returned from the API.')
+      }
+    } catch (error) {
+      console.error('Failed to load authorities:', error)
+      setError('Failed to load authorities. Please try again.')
+      setAuthorities([])
     } finally {
       setLoading(false)
     }
@@ -77,7 +101,9 @@ export default function Authorities() {
 
       <div className="mt-6 overflow-auto rounded-xl border border-slate-200 bg-white p-4">
         {loading ? (
-          <p>Loading…</p>
+          <LoadingState message="Loading authorities…" />
+        ) : error ? (
+          <p className="text-sm text-rose-600">{error}</p>
         ) : (
           <table className="w-full table-auto">
             <thead>
