@@ -17,17 +17,23 @@ export function useAsync<T>(
   const fetcherRef = useRef(fetcher)
   fetcherRef.current = fetcher
 
+  import { getApiErrorMessage } from '@/api/client'
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+interface UseAsyncState<T> {
+// ...existing code...
   const reload = useCallback(() => {
     setLoading(true)
     setError('')
     fetcherRef
       .current()
       .then((result) => setData(result))
-      .catch(() => setError('Failed to load data'))
+      .catch((err) => setError(getApiErrorMessage(err, 'Failed to load data')))
       .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
+// ...existing code...
     reload()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
