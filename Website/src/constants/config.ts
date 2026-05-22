@@ -4,6 +4,7 @@ export const API_ROUTES = {
   stats: '/api/complaints/stats',
   map: '/api/complaints/map',
   roads: '/api/roads',
+  authorities: '/api/authorities',
 } as const
 
 export const AUTH_STORAGE_KEY = 'roadwatch_token'

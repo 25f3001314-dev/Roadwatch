@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react'
-import { fetchAuthorities as apiFetch, Authority as ApiAuthority } from '@/api/authorities'
+import {
+  createAuthority,
+  deleteAuthority,
+  fetchAuthorities as apiFetch,
+  Authority as ApiAuthority,
+  updateAuthority,
+} from '@/api/authorities'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
 
 export default function Authorities() {
@@ -32,9 +38,9 @@ export default function Authorities() {
     setSaving(true)
     try {
       if (editing) {
-        await fetch(`/api/authorities/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+        await updateAuthority(editing.id, form)
       } else {
-        await fetch('/api/authorities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+        await createAuthority(form)
       }
       setShowModal(false)
       await load()
@@ -53,7 +59,7 @@ export default function Authorities() {
     if (!confirm('Delete this authority?')) return
     setSaving(true)
     try {
-      await fetch(`/api/authorities/${id}`, { method: 'DELETE' })
+      await deleteAuthority(id)
       await load()
     } finally {
       setSaving(false)
