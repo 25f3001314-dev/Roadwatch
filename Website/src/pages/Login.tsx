@@ -30,11 +30,38 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 p-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl"
-      >
+    <div className="login-scene flex min-h-screen items-center justify-center p-4">
+      <div className="login-horizon" aria-hidden />
+      <div className="login-sun" aria-hidden />
+      <div className="login-forest login-forest-left" aria-hidden />
+      <div className="login-forest login-forest-right" aria-hidden />
+
+      <div className="login-road" aria-hidden>
+        <div className="login-road-lane login-road-lane-left" />
+        <div className="login-road-lane login-road-lane-right" />
+        <div className="login-road-markings" />
+
+        <div className="login-car login-car-one" aria-hidden>
+          <span className="login-car-body" />
+          <span className="login-car-roof" />
+          <span className="login-car-wheel login-car-wheel-left" />
+          <span className="login-car-wheel login-car-wheel-right" />
+        </div>
+        <div className="login-car login-car-two" aria-hidden>
+          <span className="login-car-body login-car-body-alt" />
+          <span className="login-car-roof login-car-roof-alt" />
+          <span className="login-car-wheel login-car-wheel-left" />
+          <span className="login-car-wheel login-car-wheel-right" />
+        </div>
+        <div className="login-car login-car-three" aria-hidden>
+          <span className="login-car-body" />
+          <span className="login-car-roof" />
+          <span className="login-car-wheel login-car-wheel-left" />
+          <span className="login-car-wheel login-car-wheel-right" />
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="login-card w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
         <h1 className="text-2xl font-bold text-brand-900">RoadWatch Admin</h1>
         <p className="mt-1 text-sm text-slate-500">Sign in to manage road complaints</p>
 
