@@ -8,6 +8,7 @@ backend/uploads/*
 !backend/uploads/.gitkeep
 
 # Frontend
+node_modules/
 Website/node_modules/
 Website/dist/
 Website/.env.local
