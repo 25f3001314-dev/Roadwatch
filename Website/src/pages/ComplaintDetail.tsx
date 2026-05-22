@@ -9,6 +9,9 @@ import { LoadingState } from '@/components/ui/LoadingState'
 import { useComplaint } from '@/hooks/useComplaint'
 import type { ComplaintUpdatePayload } from '@/types/complaint'
 import { formatDate, formatPercent, parseDetections } from '@/utils/format'
+import { fetchAuthorities } from '@/api/authorities'
+import type { Authority } from '@/api/authorities'
+import { STATUSES } from '@/types/complaint'
 
 export default function ComplaintDetail() {
   const { id } = useParams<{ id: string }>()
@@ -20,12 +23,30 @@ export default function ComplaintDetail() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
+  const [authorities, setAuthorities] = useState<Authority[]>([])
+  const [assignedAuthority, setAssignedAuthority] = useState<number | ''>('')
+
   useEffect(() => {
     if (complaint) {
       setDepartment(complaint.department || '')
       setAdminNotes(complaint.adminNotes || '')
+      setAssignedAuthority('')
     }
   }, [complaint])
+
+  useEffect(() => {
+    let mounted = true
+    fetchAuthorities()
+      .then((list) => {
+        if (mounted) setAuthorities(list)
+      })
+      .catch(() => {
+        if (mounted) setAuthorities([])
+      })
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const handlePatch = async (payload: ComplaintUpdatePayload) => {
     setSaving(true)
@@ -65,13 +86,28 @@ export default function ComplaintDetail() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="space-y-4">
-          <img
-            src={imageSrc(complaint.imageUrl)}
-            alt={`Road damage report ${complaint.id}`}
-            className="max-h-[480px] w-full rounded-xl border border-slate-200 bg-slate-100 object-contain"
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <img
+              src={imageSrc(complaint.imageUrl)}
+              alt={`Original photo ${complaint.id}`}
+              className="max-h-[420px] w-full rounded-xl border border-slate-200 bg-slate-100 object-contain"
+            />
+            <img
+              src={imageSrc((complaint as any).aiProcessedImageUrl)}
+              alt={`AI processed photo ${complaint.id}`}
+              className="max-h-[420px] w-full rounded-xl border border-slate-200 bg-slate-100 object-contain"
+            />
+          </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 className="font-semibold text-brand-900">AI analysis</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-brand-900">AI analysis</h3>
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-brand-100 px-3 py-1 text-sm font-medium text-brand-900">
+                  {formatPercent(complaint.aiConfidence ?? undefined)}
+                </span>
+                <Badge variant="severity" value={complaint.severity} />
+              </div>
+            </div>
             <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
               <dt className="text-slate-500">Primary label</dt>
               <dd className="font-medium capitalize">{complaint.aiLabel || 'none'}</dd>
@@ -79,6 +115,7 @@ export default function ComplaintDetail() {
               <dd className="font-medium">{formatPercent(complaint.aiConfidence ?? undefined)}</dd>
               <dt className="text-slate-500">Severity</dt>
               <dd>
+                {/* severity badge shown in header as well */}
                 <Badge variant="severity" value={complaint.severity} />
               </dd>
               <dt className="text-slate-500">Department</dt>
@@ -101,10 +138,32 @@ export default function ComplaintDetail() {
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <h3 className="font-semibold text-slate-900">Details</h3>
             <dl className="mt-3 space-y-2 text-sm">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <dt className="text-slate-500">Status</dt>
                 <dd>
-                  <Badge variant="status" value={complaint.status} />
+                  <select
+                    value={complaint.status}
+                    onChange={async (e) => {
+                      const status = e.target.value
+                      setSaving(true)
+                      setMessage('')
+                      try {
+                        await update({ status })
+                        setMessage('Saved successfully')
+                      } catch {
+                        setMessage('Update failed')
+                      } finally {
+                        setSaving(false)
+                      }
+                    }}
+                    className="mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                  >
+                    {STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
                 </dd>
               </div>
               <div className="flex justify-between">
@@ -116,6 +175,47 @@ export default function ComplaintDetail() {
                 <dd>{formatDate(complaint.timestamp)}</dd>
               </div>
             </dl>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="font-semibold text-slate-900">Assign</h3>
+            <p className="mt-2 text-sm text-slate-500">Assign this complaint to an authority</p>
+            <select
+              value={assignedAuthority}
+              onChange={(e) => setAssignedAuthority(Number(e.target.value) || '')}
+              className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+            >
+              <option value="">— select authority —</option>
+              {authorities.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                disabled={saving || !assignedAuthority}
+                onClick={async () => {
+                  if (!assignedAuthority) return
+                  setSaving(true)
+                  setMessage('')
+                  try {
+                    // assigning maps to department on the backend for now
+                    const selected = authorities.find((a) => a.id === assignedAuthority)
+                    await update({ department: selected?.name })
+                    setMessage('Assigned successfully')
+                  } catch {
+                    setMessage('Assign failed')
+                  } finally {
+                    setSaving(false)
+                  }
+                }}
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+              >
+                Assign
+              </button>
+            </div>
           </div>
 
           {complaint.location && (

@@ -16,6 +16,7 @@ export interface Complaint {
   aiLabel?: string | null
   aiConfidence?: number | null
   aiDetectionsJson?: string | null
+  aiProcessedImageUrl?: string | null
   adminNotes?: string | null
 }
 
