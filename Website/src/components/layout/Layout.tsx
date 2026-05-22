@@ -74,7 +74,7 @@ export function Layout() {
               aria-label={label}
               title={isCollapsed ? label : undefined}
             >
-              <Icon size={18} aria-hidden={!isCollapsed} />
+              <Icon size={18} aria-hidden={true} />
               {isCollapsed ? <span className="sr-only">{label}</span> : <span>{label}</span>}
             </NavLink>
           ))}
@@ -88,7 +88,7 @@ export function Layout() {
           aria-label="Logout"
           title={isCollapsed ? 'Logout' : undefined}
         >
-          <LogOut size={16} aria-hidden={!isCollapsed} />
+          <LogOut size={16} aria-hidden={true} />
           {isCollapsed ? <span className="sr-only">Logout</span> : <span>Logout</span>}
         </button>
       </aside>
