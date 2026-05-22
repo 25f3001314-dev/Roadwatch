@@ -7,12 +7,16 @@ import '@/index.css'
 
 class AppErrorBoundary extends Component<
   { children: ReactNode },
-  { hasError: boolean }
+  { hasError: boolean; message?: string }
 > {
-  state = { hasError: false }
+  state = { hasError: false, message: undefined }
 
   static getDerivedStateFromError() {
     return { hasError: true }
+  }
+
+  componentDidCatch(error: Error) {
+    this.setState({ message: error.message })
   }
 
   render() {
@@ -24,6 +28,11 @@ class AppErrorBoundary extends Component<
             <p className="mt-2 text-sm text-slate-600">
               The dashboard hit an unexpected error. Try reloading the page.
             </p>
+            {this.state.message && (
+              <p className="mt-3 rounded-lg bg-slate-100 px-3 py-2 text-left text-xs text-slate-700">
+                {this.state.message}
+              </p>
+            )}
             <button
               type="button"
               onClick={() => window.location.reload()}
