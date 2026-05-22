@@ -19,6 +19,7 @@ interface ComplaintMapProps {
   complaints: Complaint[]
   height?: string
   zoom?: number
+  isLoading?: boolean
 }
 
 function getMarkerColor(status: string): string {
@@ -55,32 +56,18 @@ export function ComplaintMap({
   complaints,
   height = '500px',
   zoom = 5,
+  isLoading = false,
 }: ComplaintMapProps) {
-  const withLocation = complaints.filter((c) => c.location?.latitude != null && c.location?.longitude != null)
-
-  if (withLocation.length === 0) {
-    return (
-      <div
-        style={{ height }}
-        className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-500"
-      >
-        No complaints with GPS location yet.
-      </div>
-    )
-  }
-
-  const mapCenter: [number, number] = [
-    withLocation[0].location!.latitude,
-    withLocation[0].location!.longitude,
-  ]
+  const safeComplaints = Array.isArray(complaints) ? complaints : []
+  const withLocation = safeComplaints.filter((c) => c.location?.latitude != null && c.location?.longitude != null)
+  const mapCenter: [number, number] =
+    withLocation.length > 0
+      ? [withLocation[0].location!.latitude, withLocation[0].location!.longitude]
+      : [28.6139, 77.209]
 
   return (
-    <div style={{ height }} className="overflow-hidden rounded-xl border border-slate-200">
-      <MapContainer
-        center={mapCenter}
-        zoom={withLocation.length === 1 ? 14 : zoom}
-        className="h-full w-full"
-      >
+    <div style={{ height }} className="relative overflow-hidden rounded-xl border border-slate-200">
+      <MapContainer center={mapCenter} zoom={zoom} className="h-full w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -113,6 +100,13 @@ export function ComplaintMap({
           </Marker>
         ))}
       </MapContainer>
+      {!isLoading && withLocation.length === 0 && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/65 backdrop-blur-[1px]">
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-600 shadow-sm">
+            No complaints reported yet
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -122,10 +122,11 @@ export default function Dashboard() {
   )
   const [roads, setRoads] = useState<Road[]>([])
   const [roadsLoading, setRoadsLoading] = useState(true)
+  const safeRoads = Array.isArray(roads) ? roads : []
   const recentComplaints = Array.isArray(recent.data?.content) ? recent.data.content : []
+  const safeComplaints = Array.isArray(recentComplaints) ? recentComplaints : []
   const recentDataInvalid = !!recent.data && !Array.isArray(recent.data.content)
-  const roadData = roads
-  const financialRows: FinancialRow[] = roadData.map((road) => {
+  const financialRows: FinancialRow[] = safeRoads.map((road) => {
     const sanctioned = road.budgetSanctioned ?? 0
     const spent = road.budgetSpent ?? 0
     const code = road.roadCode?.trim() || road.roadType?.trim() || `Road ${road.id}`
@@ -290,7 +291,7 @@ export default function Dashboard() {
             <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-brand-200 bg-brand-50/40 text-slate-500">
               Loading...
             </div>
-          ) : roadData.length ? (
+          ) : safeRoads.length ? (
             <div className="h-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={financialRows} margin={{ top: 24, right: 24, left: 0, bottom: 84 }}>
@@ -362,8 +363,8 @@ export default function Dashboard() {
             </div>
           ) : recentDataInvalid ? (
             <ErrorState message="Unexpected complaints response" onRetry={recent.reload} />
-          ) : recentComplaints.length ? (
-            <ComplaintTable complaints={recentComplaints} compact />
+          ) : safeComplaints.length ? (
+            <ComplaintTable complaints={safeComplaints} compact />
           ) : (
             <p className="px-4 py-8 text-center text-slate-500">
               No complaints yet. Upload from the mobile app.
