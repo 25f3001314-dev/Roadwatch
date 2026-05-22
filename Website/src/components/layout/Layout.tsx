@@ -54,7 +54,7 @@ export function Layout() {
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               className="rounded-lg p-2 text-brand-100 transition hover:bg-brand-800"
             >
-              <Menu size={18} aria-hidden />
+              <Menu size={18} aria-hidden={true} />
             </button>
           </div>
         </div>
@@ -74,7 +74,7 @@ export function Layout() {
               aria-label={label}
               title={isCollapsed ? label : undefined}
             >
-              <Icon size={18} aria-hidden />
+              <Icon size={18} aria-hidden={true} />
               {isCollapsed ? <span className="sr-only">{label}</span> : <span>{label}</span>}
             </NavLink>
           ))}
@@ -88,7 +88,7 @@ export function Layout() {
           aria-label="Logout"
           title={isCollapsed ? 'Logout' : undefined}
         >
-          <LogOut size={16} aria-hidden />
+          <LogOut size={16} aria-hidden={true} />
           {isCollapsed ? <span className="sr-only">Logout</span> : <span>Logout</span>}
         </button>
       </aside>
