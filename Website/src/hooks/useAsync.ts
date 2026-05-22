@@ -1,3 +1,4 @@
+import { getApiErrorMessage } from '@/api/client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface UseAsyncState<T> {
@@ -17,11 +18,6 @@ export function useAsync<T>(
   const fetcherRef = useRef(fetcher)
   fetcherRef.current = fetcher
 
-  import { getApiErrorMessage } from '@/api/client'
-import { useCallback, useEffect, useRef, useState } from 'react'
-
-interface UseAsyncState<T> {
-// ...existing code...
   const reload = useCallback(() => {
     setLoading(true)
     setError('')
@@ -33,7 +29,6 @@ interface UseAsyncState<T> {
   }, [])
 
   useEffect(() => {
-// ...existing code...
     reload()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
