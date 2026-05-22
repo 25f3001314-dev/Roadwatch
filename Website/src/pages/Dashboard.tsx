@@ -15,6 +15,8 @@ export default function Dashboard() {
     () => fetchComplaints({ page: 0, size: RECENT_COMPLAINTS_SIZE }),
     []
   )
+  const recentComplaints = Array.isArray(recent.data?.content) ? recent.data.content : []
+  const recentDataInvalid = !!recent.data && !Array.isArray(recent.data.content)
 
   if (statsLoading) return <LoadingState message="Loading dashboard…" />
   if (statsError || !stats) {
@@ -49,8 +51,10 @@ export default function Dashboard() {
             <div className="p-8">
               <LoadingState />
             </div>
-          ) : recent.data?.content.length ? (
-            <ComplaintTable complaints={recent.data.content} compact />
+          ) : recentDataInvalid ? (
+            <ErrorState message="Unexpected complaints response" onRetry={recent.reload} />
+          ) : recentComplaints.length ? (
+            <ComplaintTable complaints={recentComplaints} compact />
           ) : (
             <p className="px-4 py-8 text-center text-slate-500">
               No complaints yet. Upload from the mobile app.
