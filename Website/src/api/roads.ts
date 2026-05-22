@@ -2,9 +2,17 @@ import { api } from './client'
 import { API_ROUTES } from '@/constants/config'
 import type { Road } from '@/types/road'
 
+function normalizeRoadsResponse(data: unknown): Road[] {
+  if (Array.isArray(data)) return data as Road[]
+  if (Array.isArray((data as { content?: unknown } | null | undefined)?.content)) {
+    return ((data as { content: unknown[] }).content ?? []) as Road[]
+  }
+  return []
+}
+
 export async function fetchRoads(): Promise<Road[]> {
-  const { data } = await api.get<Road[]>(`${API_ROUTES.roads}`)
-  return data
+  const { data } = await api.get<unknown>(`${API_ROUTES.roads}`)
+  return normalizeRoadsResponse(data)
 }
 
 export async function createRoad(payload: Partial<Road>): Promise<Road> {

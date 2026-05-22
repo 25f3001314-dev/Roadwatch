@@ -28,6 +28,14 @@ function formatMoney(value: number): string {
   }).format(value || 0)
 }
 
+function normalizeRoadsData(data: unknown) {
+  if (Array.isArray(data)) return data
+  if (Array.isArray((data as { content?: unknown } | null | undefined)?.content)) {
+    return (data as { content: unknown[] }).content
+  }
+  return []
+}
+
 export default function Dashboard() {
   const { data: stats, error: statsError, loading: statsLoading, reload } = useStats(true)
   const recent = useAsync(
@@ -37,7 +45,7 @@ export default function Dashboard() {
   const roads = useAsync(() => fetchRoads(), [])
   const recentComplaints = Array.isArray(recent.data?.content) ? recent.data.content : []
   const recentDataInvalid = !!recent.data && !Array.isArray(recent.data.content)
-  const roadData = Array.isArray(roads.data) ? roads.data : []
+  const roadData = normalizeRoadsData(roads.data)
   const financialRows = roadData.map((road) => ({
     name: road.name,
     sanctioned: road.budgetSanctioned ?? 0,
