@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { api } from '@/api/client'
 import { fetchComplaints } from '@/api/complaints'
-import { fetchRoads } from '@/api/roads'
 import { ComplaintTable } from '@/components/complaints/ComplaintTable'
 import { StatCard } from '@/components/complaints/StatCard'
 import { ErrorState } from '@/components/ui/ErrorState'
@@ -19,6 +20,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { API_ROUTES } from '@/constants/config'
+import type { Road } from '@/types/road'
 
 function formatMoney(value: number): string {
   return new Intl.NumberFormat('en-IN', {
@@ -36,16 +39,57 @@ function normalizeRoadsData(data: unknown) {
   return []
 }
 
+const SAMPLE_ROADS: Road[] = [
+  {
+    id: 1,
+    name: 'Delhi-Meerut Expressway',
+    roadType: 'NH',
+    contractorName: 'L&T Infra',
+    budgetSanctioned: 450_000_000,
+    budgetSpent: 420_000_000,
+    status: 'IN_PROGRESS',
+  },
+  {
+    id: 2,
+    name: 'Gorakhpur-Basti Highway',
+    roadType: 'NH',
+    contractorName: 'Tata Projects',
+    budgetSanctioned: 620_000_000,
+    budgetSpent: 580_000_000,
+    status: 'IN_PROGRESS',
+  },
+  {
+    id: 3,
+    name: 'Lucknow-Barabanki Highway',
+    roadType: 'SH',
+    contractorName: 'Dilip Buildcon',
+    budgetSanctioned: 180_000_000,
+    budgetSpent: 195_000_000,
+    status: 'IN_PROGRESS',
+  },
+  {
+    id: 4,
+    name: 'Agra-Aligarh Link Road',
+    roadType: 'MDR',
+    contractorName: 'Shapoorji Pallonji',
+    budgetSanctioned: 95_000_000,
+    budgetSpent: 72_000_000,
+    status: 'IN_PROGRESS',
+  },
+]
+
 export default function Dashboard() {
   const { data: stats, error: statsError, loading: statsLoading, reload } = useStats(true)
   const recent = useAsync(
     () => fetchComplaints({ page: 0, size: RECENT_COMPLAINTS_SIZE }),
     []
   )
-  const roads = useAsync(() => fetchRoads(), [])
+  const [roads, setRoads] = useState<Road[]>([])
+  const [roadsLoading, setRoadsLoading] = useState(true)
+  const [roadsFallbackNotice, setRoadsFallbackNotice] = useState('')
   const recentComplaints = Array.isArray(recent.data?.content) ? recent.data.content : []
   const recentDataInvalid = !!recent.data && !Array.isArray(recent.data.content)
-  const roadData = normalizeRoadsData(roads.data)
+  const roadData = roads
   const financialRows = roadData.map((road) => ({
     name: road.name,
     sanctioned: road.budgetSanctioned ?? 0,
@@ -53,6 +97,48 @@ export default function Dashboard() {
   }))
   const totalAllocated = financialRows.reduce((sum, road) => sum + road.sanctioned, 0)
   const totalSpent = financialRows.reduce((sum, road) => sum + road.spent, 0)
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadRoads = async () => {
+      setRoadsLoading(true)
+      setRoadsFallbackNotice('')
+
+      try {
+        const { data } = await api.get<unknown>(API_ROUTES.roads)
+        const normalized = normalizeRoadsData(data)
+
+        if (!Array.isArray(data) && !Array.isArray((data as { content?: unknown } | null | undefined)?.content)) {
+          if (mounted) {
+            setRoads(SAMPLE_ROADS)
+            setRoadsFallbackNotice('Unable to load data. Using sample data.')
+          }
+          return
+        }
+
+        if (mounted) {
+          setRoads(normalized.length ? (normalized as Road[]) : SAMPLE_ROADS)
+          if (normalized.length === 0) {
+            setRoadsFallbackNotice('Unable to load data. Using sample data.')
+          }
+        }
+      } catch {
+        if (mounted) {
+          setRoads(SAMPLE_ROADS)
+          setRoadsFallbackNotice('Unable to load data. Using sample data.')
+        }
+      } finally {
+        if (mounted) setRoadsLoading(false)
+      }
+    }
+
+    loadRoads()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   if (statsLoading) return <LoadingState message="Loading dashboard…" />
   if (statsError || !stats) {
@@ -94,28 +180,35 @@ export default function Dashboard() {
         </div>
 
         <div className="mt-6 h-[360px]">
-          {roads.loading ? (
+          {roadsLoading ? (
             <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-brand-200 bg-brand-50/40 text-slate-500">
-              Loading financial data…
+              Loading...
             </div>
-          ) : roads.error ? (
-            <ErrorState message={roads.error} onRetry={roads.reload} />
+          ) : roadData.length ? (
+            <div className="h-full">
+              {roadsFallbackNotice && (
+                <p className="mb-3 text-sm font-medium text-amber-700">{roadsFallbackNotice}</p>
+              )}
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={financialRows} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e9d5ff" />
+                  <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 12 }} interval={0} />
+                  <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(124, 58, 237, 0.08)' }}
+                    contentStyle={{ borderRadius: 12, borderColor: '#ddd6fe' }}
+                    formatter={(value) => formatMoney(Number(value))}
+                  />
+                  <Legend />
+                  <Bar dataKey="sanctioned" name="Budget Sanctioned" fill="#7c3aed" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="spent" name="Budget Spent" fill="#a78bfa" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           ) : financialRows.length ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={financialRows} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e9d5ff" />
-                <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 12 }} interval={0} />
-                <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} />
-                <Tooltip
-                  cursor={{ fill: 'rgba(124, 58, 237, 0.08)' }}
-                  contentStyle={{ borderRadius: 12, borderColor: '#ddd6fe' }}
-                  formatter={(value) => formatMoney(Number(value))}
-                />
-                <Legend />
-                <Bar dataKey="sanctioned" name="Budget Sanctioned" fill="#7c3aed" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="spent" name="Budget Spent" fill="#a78bfa" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-brand-200 bg-brand-50/40 text-slate-500">
+              No roads found yet.
+            </div>
           ) : (
             <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-brand-200 bg-brand-50/40 text-slate-500">
               No roads found yet.
