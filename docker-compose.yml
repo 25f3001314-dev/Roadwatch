@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: roadwatch_db
+    environment:
+      POSTGRES_DB: roadwatch
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d roadwatch"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ai_service:
+    build:
+      context: ./ai_service
+      dockerfile: Dockerfile
+    container_name: roadwatch_ai_service
+    environment:
+      - MODEL_PATH=model/rrd_baseline/rdd_baseline/run1/weights/best.pt
+      - AI_CONF_THRESHOLD=0.25
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: roadwatch_backend
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/roadwatch
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - AI_SERVICE_URL=http://ai_service:8000
+      - ROADWATCH_UPLOADS_DIR=/app/uploads
+      - ROADWATCH_PUBLIC_BASE_URL=http://localhost:8080
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin123
+      - JWT_SECRET=roadwatch-jwt-secret-change-me-in-production-min-32-chars
+      - CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      ai_service:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  uploads_data:

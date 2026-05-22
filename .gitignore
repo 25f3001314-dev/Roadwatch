@@ -1,0 +1,27 @@
+# Local dev tools (not part of the repo)
+tools/
+
+# Backend
+backend/target/
+backend/data/
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Frontend
+Website/node_modules/
+Website/dist/
+Website/.env.local
+Website/*.tsbuildinfo
+Website/vite.config.js
+Website/vite.config.d.ts
+
+# AI
+ai_service/__pycache__/
+**/__pycache__/
+*.pyc
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.log
