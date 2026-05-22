@@ -6,6 +6,7 @@ import Dashboard from '@/pages/Dashboard'
 import Complaints from '@/pages/Complaints'
 import ComplaintDetail from '@/pages/ComplaintDetail'
 import MapView from '@/pages/MapView'
+import Roads from '@/pages/Roads'
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
         <Route index element={<Dashboard />} />
         <Route path="complaints" element={<Complaints />} />
         <Route path="complaints/:id" element={<ComplaintDetail />} />
+        <Route path="roads" element={<Roads />} />
         <Route path="map" element={<MapView />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
