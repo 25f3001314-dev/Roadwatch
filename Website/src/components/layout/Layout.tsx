@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, List, Map, LogOut, Menu, Road } from 'lucide-react'
+import { LayoutDashboard, List, Map, LogOut, Menu, Road, User } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useEffect, useState } from 'react'
 
@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/complaints', label: 'Complaints', icon: List, end: false },
   { to: '/roads', label: 'Roads & Contractors', icon: Road, end: false },
+  { to: '/authorities', label: 'Authorities', icon: User, end: false },
   { to: '/map', label: 'Map', icon: Map, end: false },
 ] as const
 

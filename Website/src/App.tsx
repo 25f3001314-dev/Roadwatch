@@ -7,6 +7,7 @@ import Complaints from '@/pages/Complaints'
 import ComplaintDetail from '@/pages/ComplaintDetail'
 import MapView from '@/pages/MapView'
 import Roads from '@/pages/Roads'
+import Authorities from '@/pages/Authorities'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="complaints" element={<Complaints />} />
         <Route path="complaints/:id" element={<ComplaintDetail />} />
         <Route path="roads" element={<Roads />} />
+        <Route path="authorities" element={<Authorities />} />
         <Route path="map" element={<MapView />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
