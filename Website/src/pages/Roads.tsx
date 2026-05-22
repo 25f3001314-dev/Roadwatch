@@ -125,22 +125,22 @@ export default function Roads() {
 
       {showModal && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-lg rounded-xl bg-white p-4 shadow-lg">
+          <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-lg">
             <h3 className="text-lg font-semibold">Add Road</h3>
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm text-slate-700">Name</label>
+                <label className="mb-1 block text-xs font-medium text-slate-700">Name</label>
                 <input
-                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
                   value={form.name || ''}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
               </div>
 
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm text-slate-700">Road Type</label>
+                <label className="mb-1 block text-xs font-medium text-slate-700">Road Type</label>
                 <select
-                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
                   value={form.roadType}
                   onChange={(e) => setForm({ ...form, roadType: e.target.value })}
                 >
@@ -151,55 +151,55 @@ export default function Roads() {
               </div>
 
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm text-slate-700">Contractor</label>
+                <label className="mb-1 block text-xs font-medium text-slate-700">Contractor</label>
                 <input
-                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
                   value={form.contractorName || ''}
                   onChange={(e) => setForm({ ...form, contractorName: e.target.value })}
                 />
               </div>
 
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm text-slate-700">Last Relaying Date</label>
+                <label className="mb-1 block text-xs font-medium text-slate-700">Last Relaying Date</label>
                 <input
                   type="date"
-                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
                   value={form.lastRelayingDate || ''}
                   onChange={(e) => setForm({ ...form, lastRelayingDate: e.target.value })}
                 />
               </div>
 
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm text-slate-700">Budget Sanctioned</label>
+                <label className="mb-1 block text-xs font-medium text-slate-700">Budget Sanctioned</label>
                 <input
                   type="number"
-                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
                   value={form.budgetSanctioned ?? ''}
                   onChange={(e) => setForm({ ...form, budgetSanctioned: Number(e.target.value) })}
                 />
               </div>
 
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm text-slate-700">Budget Spent</label>
+                <label className="mb-1 block text-xs font-medium text-slate-700">Budget Spent</label>
                 <input
                   type="number"
-                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
                   value={form.budgetSpent ?? ''}
                   onChange={(e) => setForm({ ...form, budgetSpent: Number(e.target.value) })}
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-1 block text-sm text-slate-700">Status</label>
+                <label className="mb-1 block text-xs font-medium text-slate-700">Status</label>
                 <input
-                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
                   value={form.status || ''}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
                 />
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-2">
+            <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setShowModal(false)} className="rounded-lg px-4 py-2 text-sm">Cancel</button>
               <button onClick={handleCreate} disabled={saving} className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
                 {saving ? 'Saving…' : 'Create'}
