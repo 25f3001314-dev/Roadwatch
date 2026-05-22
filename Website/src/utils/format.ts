@@ -46,3 +46,11 @@ export function statusClass(status: string): string {
       return 'bg-slate-100 text-slate-800'
   }
 }
+
+export function getApiErrorMessage(error: unknown): string {
+  if (typeof error === 'string') return error
+  if (error && typeof error === 'object' && 'message' in error) {
+    return error.message as string
+  }
+  return 'An unknown error occurred'
+}

@@ -1,3 +1,4 @@
+import { getApiErrorMessage } from '@/utils/format'
 import { useCallback, useEffect, useState } from 'react'
 import { fetchComplaints, type ComplaintFilters } from '@/api/complaints'
 import { PAGE_SIZE } from '@/constants/config'
@@ -40,8 +41,8 @@ export function useComplaints(initialPage = 0, pageSize = PAGE_SIZE) {
       const data = await fetchComplaints(params)
       setComplaints(data.content)
       setTotalPages(data.totalPages)
-    } catch {
-      setError('Failed to load complaints')
+    } catch (err) {
+      setError(getApiErrorMessage(err))
     } finally {
       setLoading(false)
     }
