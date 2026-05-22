@@ -11,6 +11,9 @@ public class Road {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)
+    private String roadCode;
+
     private String name;
 
     private String roadType;
@@ -29,6 +32,9 @@ public class Road {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public String getRoadCode() { return roadCode; }
+    public void setRoadCode(String roadCode) { this.roadCode = roadCode; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
