@@ -125,33 +125,78 @@ export default function Roads() {
 
       {showModal && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg">
+          <div className="w-full max-w-lg rounded-xl bg-white p-4 shadow-lg">
             <h3 className="text-lg font-semibold">Add Road</h3>
-            <div className="mt-4 grid gap-3">
-              <label className="text-sm text-slate-700">Name</label>
-              <input className="rounded-lg border border-slate-300 px-3 py-2" value={form.name || ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="md:col-span-1">
+                <label className="mb-1 block text-sm text-slate-700">Name</label>
+                <input
+                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  value={form.name || ''}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+              </div>
 
-              <label className="text-sm text-slate-700">Road Type</label>
-              <select className="rounded-lg border border-slate-300 px-3 py-2" value={form.roadType} onChange={(e) => setForm({ ...form, roadType: e.target.value })}>
-                <option value="NH">NH</option>
-                <option value="SH">SH</option>
-                <option value="MDR">MDR</option>
-              </select>
+              <div className="md:col-span-1">
+                <label className="mb-1 block text-sm text-slate-700">Road Type</label>
+                <select
+                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  value={form.roadType}
+                  onChange={(e) => setForm({ ...form, roadType: e.target.value })}
+                >
+                  <option value="NH">NH</option>
+                  <option value="SH">SH</option>
+                  <option value="MDR">MDR</option>
+                </select>
+              </div>
 
-              <label className="text-sm text-slate-700">Contractor</label>
-              <input className="rounded-lg border border-slate-300 px-3 py-2" value={form.contractorName || ''} onChange={(e) => setForm({ ...form, contractorName: e.target.value })} />
+              <div className="md:col-span-1">
+                <label className="mb-1 block text-sm text-slate-700">Contractor</label>
+                <input
+                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  value={form.contractorName || ''}
+                  onChange={(e) => setForm({ ...form, contractorName: e.target.value })}
+                />
+              </div>
 
-              <label className="text-sm text-slate-700">Last Relaying Date</label>
-              <input type="date" className="rounded-lg border border-slate-300 px-3 py-2" value={form.lastRelayingDate || ''} onChange={(e) => setForm({ ...form, lastRelayingDate: e.target.value })} />
+              <div className="md:col-span-1">
+                <label className="mb-1 block text-sm text-slate-700">Last Relaying Date</label>
+                <input
+                  type="date"
+                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  value={form.lastRelayingDate || ''}
+                  onChange={(e) => setForm({ ...form, lastRelayingDate: e.target.value })}
+                />
+              </div>
 
-              <label className="text-sm text-slate-700">Budget Sanctioned</label>
-              <input type="number" className="rounded-lg border border-slate-300 px-3 py-2" value={form.budgetSanctioned ?? ''} onChange={(e) => setForm({ ...form, budgetSanctioned: Number(e.target.value) })} />
+              <div className="md:col-span-1">
+                <label className="mb-1 block text-sm text-slate-700">Budget Sanctioned</label>
+                <input
+                  type="number"
+                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  value={form.budgetSanctioned ?? ''}
+                  onChange={(e) => setForm({ ...form, budgetSanctioned: Number(e.target.value) })}
+                />
+              </div>
 
-              <label className="text-sm text-slate-700">Budget Spent</label>
-              <input type="number" className="rounded-lg border border-slate-300 px-3 py-2" value={form.budgetSpent ?? ''} onChange={(e) => setForm({ ...form, budgetSpent: Number(e.target.value) })} />
+              <div className="md:col-span-1">
+                <label className="mb-1 block text-sm text-slate-700">Budget Spent</label>
+                <input
+                  type="number"
+                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  value={form.budgetSpent ?? ''}
+                  onChange={(e) => setForm({ ...form, budgetSpent: Number(e.target.value) })}
+                />
+              </div>
 
-              <label className="text-sm text-slate-700">Status</label>
-              <input className="rounded-lg border border-slate-300 px-3 py-2" value={form.status || ''} onChange={(e) => setForm({ ...form, status: e.target.value })} />
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-sm text-slate-700">Status</label>
+                <input
+                  className="h-9 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  value={form.status || ''}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                />
+              </div>
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
