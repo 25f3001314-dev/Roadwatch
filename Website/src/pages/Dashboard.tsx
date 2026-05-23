@@ -181,7 +181,12 @@ export default function Dashboard() {
     <div className="space-y-6 pb-4">
       <PageHeader
         title="Dashboard"
-        subtitle="Government analytics overview with live complaint, AI, and department signals"
+        subtitle={
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.14)] animate-pulse" />
+            Updated every 30s
+          </span>
+        }
         action={
           <div className="flex flex-wrap gap-3">
             <Link
@@ -221,7 +226,7 @@ export default function Dashboard() {
         ))}
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-12 2xl:gap-5 items-start">
+      <div className="grid gap-4 items-start xl:grid-cols-12 2xl:gap-5">
         <DashboardSection
           className="xl:col-span-8"
           title="Complaint trend"
