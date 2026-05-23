@@ -44,7 +44,9 @@ export async function updateComplaint(
   return data
 }
 
-export async function submitComplaint(formData: FormData): Promise<Complaint> {
+export async function createComplaint(formData: FormData): Promise<Complaint> {
   const { data } = await api.post<Complaint>(API_ROUTES.complaints, formData)
   return data
 }
+
+export const submitComplaint = createComplaint
