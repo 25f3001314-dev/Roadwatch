@@ -5,12 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.Collections;
 
 @Service
 public class AiServiceClient {
@@ -24,6 +25,7 @@ public class AiServiceClient {
     public AiAnalysisResponseDto analyzeImage(MultipartFile file, String endpoint) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
         byte[] bytes = file.getBytes();
         ByteArrayResource fileAsResource = new ByteArrayResource(bytes) {
@@ -33,10 +35,13 @@ public class AiServiceClient {
             }
         };
 
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("image", fileAsResource);
+        MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
+        bodyBuilder.part("image", fileAsResource)
+                .header("Content-Disposition", "form-data; name=\"image\"; filename=\"" + fileAsResource.getFilename() + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM);
 
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+        MultiValueMap<String, HttpEntity<?>> body = bodyBuilder.build();
+        HttpEntity<MultiValueMap<String, HttpEntity<?>>> requestEntity = new HttpEntity<>(body, headers);
         String url = aiServiceUrl + endpoint;
 
         try {
