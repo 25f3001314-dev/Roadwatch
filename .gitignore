@@ -10,7 +10,9 @@ backend/uploads/*
 # Frontend
 node_modules/
 Website/node_modules/
+*.tsbuildinfo
 Website/dist/
+Website/.vercel/
 Website/.env.local
 Website/*.tsbuildinfo
 Website/vite.config.js

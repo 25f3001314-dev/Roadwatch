@@ -1,377 +1,407 @@
 import { Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { api } from '@/api/client'
-import { fetchComplaints } from '@/api/complaints'
+import { useMemo } from 'react'
+import { fetchComplaints, fetchMapComplaints } from '@/api/complaints'
 import { ComplaintTable } from '@/components/complaints/ComplaintTable'
 import { StatCard } from '@/components/complaints/StatCard'
+import { ComplaintMap } from '@/components/map/ComplaintMap'
+import { Badge } from '@/components/ui/Badge'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { RECENT_COMPLAINTS_SIZE } from '@/constants/config'
-import { useStats } from '@/hooks/useStats'
 import { useAsync } from '@/hooks/useAsync'
+import { useStats } from '@/hooks/useStats'
+import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState'
+import { DashboardSection } from '@/components/dashboard/DashboardSection'
+import { CategoryPieChart } from '@/components/dashboard/charts/CategoryPieChart'
+import { DepartmentPerformanceChart } from '@/components/dashboard/charts/DepartmentPerformanceChart'
+import { SeverityBarChart } from '@/components/dashboard/charts/SeverityBarChart'
+import { StatusDonutChart } from '@/components/dashboard/charts/StatusDonutChart'
+import { TrendLineChart } from '@/components/dashboard/charts/TrendLineChart'
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  LabelList,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
-import { API_ROUTES } from '@/constants/config'
-import type { Road } from '@/types/road'
+  buildDailyTrend,
+  buildDepartmentPerformanceData,
+  buildLabelDistribution,
+  buildRoadTypeDistribution,
+  buildSeverityDistribution,
+  buildStatusDistribution,
+  countGeoTaggedComplaints,
+  countUniqueLabels,
+  formatComplaintLocation,
+  getLatestHighSeverityComplaints,
+} from '@/utils/dashboard'
 
-function formatMoney(value: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(value || 0)
+function formatCount(value: number): string {
+  return new Intl.NumberFormat('en-IN').format(value)
 }
 
-function formatIndianAbbreviation(value: number, withCurrency = false): string {
-  const safeValue = value || 0
-  const absValue = Math.abs(safeValue)
-  const prefix = withCurrency ? '₹' : ''
-
-  if (absValue >= 10_000_000) {
-    return `${prefix}${Math.round(safeValue / 10_000_000)}Cr`
-  }
-
-  if (absValue >= 100_000) {
-    return `${prefix}${Math.round(safeValue / 100_000)}L`
-  }
-
-  if (absValue >= 1_000) {
-    return `${prefix}${Math.round(safeValue / 1_000)}K`
-  }
-
-  return `${prefix}${Math.round(safeValue)}`
+function formatPercent(value: number): string {
+  return `${Math.round(value)}%`
 }
 
-interface FinancialRow {
-  code: string
-  name: string
-  sanctioned: number
-  spent: number
-  remaining: number
-}
-
-function normalizeRoadsData(data: unknown) {
-  if (Array.isArray(data)) return data
-  if (Array.isArray((data as { data?: unknown } | null | undefined)?.data)) {
-    return (data as { data: unknown[] }).data
+function getComplaintTrendSummary(
+  complaints: Array<{ timestamp: string; severity?: string | null; status?: string | null }>,
+  predicate: (complaint: { timestamp: string; severity?: string | null; status?: string | null }) => boolean
+): { label: string; tone: 'up' | 'down' | 'steady' } {
+  if (!complaints.length) {
+    return { label: 'Live', tone: 'steady' }
   }
-  if (Array.isArray((data as { content?: unknown } | null | undefined)?.content)) {
-    return (data as { content: unknown[] }).content
-  }
-  return []
-}
 
-const SAMPLE_ROADS: Road[] = [
-  {
-    id: 1,
-    roadCode: 'NH-01',
-    name: 'Delhi-Meerut Expressway',
-    roadType: 'NH',
-    contractorName: 'L&T Infra',
-    budgetSanctioned: 450_000_000,
-    budgetSpent: 420_000_000,
-    status: 'IN_PROGRESS',
-  },
-  {
-    id: 2,
-    roadCode: 'NH-18',
-    name: 'Gorakhpur-Basti Highway',
-    roadType: 'NH',
-    contractorName: 'Tata Projects',
-    budgetSanctioned: 620_000_000,
-    budgetSpent: 580_000_000,
-    status: 'IN_PROGRESS',
-  },
-  {
-    id: 3,
-    roadCode: 'SH-21',
-    name: 'Lucknow-Barabanki Highway',
-    roadType: 'SH',
-    contractorName: 'Dilip Buildcon',
-    budgetSanctioned: 180_000_000,
-    budgetSpent: 195_000_000,
-    status: 'IN_PROGRESS',
-  },
-  {
-    id: 4,
-    roadCode: 'MDR-04',
-    name: 'Agra-Aligarh Link Road',
-    roadType: 'MDR',
-    contractorName: 'Shapoorji Pallonji',
-    budgetSanctioned: 95_000_000,
-    budgetSpent: 72_000_000,
-    status: 'IN_PROGRESS',
-  },
-]
+  const now = new Date()
+  const recentBoundary = new Date(now)
+  recentBoundary.setDate(now.getDate() - 3)
+  const windowBoundary = new Date(now)
+  windowBoundary.setDate(now.getDate() - 7)
 
-export default function Dashboard() {
-  const { data: stats, error: statsError, loading: statsLoading, reload } = useStats(true)
-  const recent = useAsync(
-    () => fetchComplaints({ page: 0, size: RECENT_COMPLAINTS_SIZE }),
-    []
-  )
-  const [roads, setRoads] = useState<Road[]>([])
-  const [roadsLoading, setRoadsLoading] = useState(true)
-  const safeRoads = Array.isArray(roads) ? roads : []
-  const recentComplaints = Array.isArray(recent.data?.content) ? recent.data.content : []
-  const safeComplaints = Array.isArray(recentComplaints) ? recentComplaints : []
-  const recentDataInvalid = !!recent.data && !Array.isArray(recent.data.content)
-  const financialRows: FinancialRow[] = safeRoads.map((road) => {
-    const sanctioned = road.budgetSanctioned ?? 0
-    const spent = road.budgetSpent ?? 0
-    const code = road.roadCode?.trim() || road.roadType?.trim() || `Road ${road.id}`
+  let recent = 0
+  let previous = 0
 
-    return {
-      code,
-      name: road.name,
-      sanctioned,
-      spent,
-      remaining: sanctioned - spent,
+  complaints.forEach((complaint) => {
+    const complaintDate = new Date(complaint.timestamp)
+
+    if (complaintDate < windowBoundary) {
+      return
     }
-  })
-  const totalAllocated = financialRows.reduce((sum, road) => sum + road.sanctioned, 0)
-  const totalSpent = financialRows.reduce((sum, road) => sum + road.spent, 0)
-  const skipEveryOtherXAxisLabel = financialRows.length > 6
 
-  function RoadAxisTick({
-    x,
-    y,
-    payload,
-  }: {
-    x?: number
-    y?: number
-    payload?: { index?: number }
-  }) {
-    const row = financialRows[payload?.index ?? 0]
-
-    if (!row) return null
-    if (skipEveryOtherXAxisLabel && (payload?.index ?? 0) % 2 === 1) return null
-
-    return (
-      <g transform={`translate(${x ?? 0},${(y ?? 0) + 6}) rotate(-45)`}>
-        <text textAnchor="end" fill="#334155">
-          <tspan x="0" dy="0" className="fill-slate-900 text-[12px] font-semibold">
-            {row.code}
-          </tspan>
-          <tspan x="0" dy="15" className="fill-brand-700 text-[11px] font-medium">
-            {formatIndianAbbreviation(row.spent, true)}
-          </tspan>
-        </text>
-      </g>
-    )
-  }
-
-  function FinancialTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload?: FinancialRow }> }) {
-    if (!active || !payload?.length) return null
-
-    const row = payload[0]?.payload
-
-    if (!row) return null
-
-    return (
-      <div className="min-w-[260px] rounded-2xl border border-brand-100 bg-white p-4 shadow-xl shadow-violet-100/50">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Financial snapshot</p>
-        <div className="mt-2 space-y-1">
-          <p className="text-base font-semibold text-slate-900">{row.code}</p>
-          <p className="text-sm text-slate-600">{row.name}</p>
-        </div>
-
-        <div className="mt-4 grid gap-2 text-sm">
-          <div className="flex items-center justify-between gap-4 rounded-xl bg-brand-50 px-3 py-2">
-            <span className="text-slate-600">Budget Sanctioned</span>
-            <span className="font-semibold text-brand-900">{formatMoney(row.sanctioned)}</span>
-          </div>
-          <div className="flex items-center justify-between gap-4 rounded-xl bg-brand-50 px-3 py-2">
-            <span className="text-slate-600">Budget Spent</span>
-            <span className="font-semibold text-brand-900">{formatMoney(row.spent)}</span>
-          </div>
-          <div className="flex items-center justify-between gap-4 rounded-xl bg-brand-50 px-3 py-2">
-            <span className="text-slate-600">Remaining budget</span>
-            <span className={`font-semibold ${row.remaining >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-              {formatMoney(row.remaining)}
-            </span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  useEffect(() => {
-    let mounted = true
-
-    const loadRoads = async () => {
-      setRoadsLoading(true)
-
-      try {
-        const { data } = await api.get<unknown>(API_ROUTES.roads)
-        console.log('Dashboard roads API response:', data)
-        const normalized = normalizeRoadsData(data)
-
-        if (
-          !Array.isArray(data) &&
-          !Array.isArray((data as { data?: unknown } | null | undefined)?.data) &&
-          !Array.isArray((data as { content?: unknown } | null | undefined)?.content)
-        ) {
-          if (mounted) {
-            setRoads(SAMPLE_ROADS)
-          }
-          return
-        }
-
-        if (mounted) {
-          setRoads(normalized.length ? (normalized as Road[]) : SAMPLE_ROADS)
-        }
-      } catch {
-        if (mounted) {
-          setRoads(SAMPLE_ROADS)
-        }
-      } finally {
-        if (mounted) setRoadsLoading(false)
+    if (predicate(complaint)) {
+      if (complaintDate >= recentBoundary) {
+        recent += 1
+      } else {
+        previous += 1
       }
     }
+  })
 
-    loadRoads()
-
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  if (statsLoading) return <LoadingState message="Loading dashboard…" />
-  if (statsError || !stats) {
-    return <ErrorState message={statsError || 'No data available'} onRetry={reload} />
+  if (recent === 0 && previous === 0) {
+    return { label: 'Flat', tone: 'steady' }
   }
 
+  if (previous === 0) {
+    return { label: 'New activity', tone: 'up' }
+  }
+
+  const delta = ((recent - previous) / previous) * 100
+
+  if (Math.abs(delta) < 1) {
+    return { label: 'Flat', tone: 'steady' }
+  }
+
+  return {
+    label: `${delta > 0 ? '+' : ''}${Math.abs(delta).toFixed(0)}% vs prev period`,
+    tone: delta > 0 ? 'up' : 'down',
+  }
+}
+
+export default function Dashboard() {
+  const { data: stats, error: statsError, loading: statsLoading, reload: reloadStats } = useStats(true)
+  const recent = useAsync(() => fetchComplaints({ page: 0, size: RECENT_COMPLAINTS_SIZE }), [])
+  const allComplaints = useAsync(() => fetchMapComplaints(), [])
+
+  const complaints = Array.isArray(allComplaints.data) ? allComplaints.data : []
+  const recentComplaints = Array.isArray(recent.data?.content) ? recent.data.content : []
+  const recentInvalid = !!recent.data && !Array.isArray(recent.data.content)
+
+  const trendData = useMemo(() => buildDailyTrend(complaints, 7), [complaints])
+  const statusData = useMemo(() => buildStatusDistribution(complaints), [complaints])
+  const severityData = useMemo(() => buildSeverityDistribution(complaints), [complaints])
+  const labelData = useMemo(() => buildLabelDistribution(complaints), [complaints])
+  const categoryData = useMemo(() => buildRoadTypeDistribution(complaints), [complaints])
+  const departmentData = useMemo(() => buildDepartmentPerformanceData(complaints), [complaints])
+  const highSeverityComplaints = useMemo(() => getLatestHighSeverityComplaints(complaints, 5), [complaints])
+  const geoTaggedCount = countGeoTaggedComplaints(complaints)
+  const departmentCount = countUniqueLabels(complaints, (complaint) => complaint.department, 'Unassigned')
+  const openCount = (stats?.pending || 0) + (stats?.assigned || 0) + (stats?.inProgress || 0)
+  const geotaggedRate = stats?.total ? Math.round((geoTaggedCount / stats.total) * 100) : 0
+  const totalTrend = getComplaintTrendSummary(complaints, () => true)
+  const openTrend = getComplaintTrendSummary(complaints, (complaint) => {
+    const status = complaint.status?.trim().toUpperCase()
+    return status === 'PENDING' || status === 'ASSIGNED' || status === 'IN_PROGRESS'
+  })
+  const resolvedTrend = getComplaintTrendSummary(complaints, (complaint) => complaint.status?.trim().toUpperCase() === 'RESOLVED')
+  const highSeverityTrend = getComplaintTrendSummary(complaints, (complaint) => complaint.severity?.trim().toUpperCase() === 'HIGH')
+
+  const metrics = [
+    {
+      label: 'Total complaints',
+      value: stats ? formatCount(stats.total) : '—',
+      description: 'All complaints captured in the system',
+      loading: statsLoading,
+      accent: 'purple' as const,
+      trend: totalTrend.label,
+      trendTone: totalTrend.tone,
+    },
+    {
+      label: 'Open workflow',
+      value: stats ? formatCount(openCount) : '—',
+      description: 'Pending + assigned + in progress',
+      loading: statsLoading,
+      accent: 'blue' as const,
+      trend: openTrend.label,
+      trendTone: openTrend.tone,
+    },
+    {
+      label: 'High severity',
+      value: stats ? formatCount(stats.highSeverity) : '—',
+      description: 'Escalations requiring immediate review',
+      loading: statsLoading,
+      accent: 'red' as const,
+      trend: highSeverityTrend.label,
+      trendTone: highSeverityTrend.tone,
+    },
+    {
+      label: 'Resolved cases',
+      value: stats ? formatCount(stats.resolved) : '—',
+      description: 'Complaints closed through the workflow',
+      loading: statsLoading,
+      accent: 'green' as const,
+      trend: resolvedTrend.label,
+      trendTone: resolvedTrend.tone,
+    },
+    {
+      label: 'Geo-tagged',
+      value: stats ? formatCount(geoTaggedCount) : '—',
+      description: stats ? `${formatPercent(geotaggedRate)} of total complaints have locations` : 'Awaiting live location data',
+      loading: allComplaints.loading,
+      accent: 'yellow' as const,
+      trend: stats ? `${formatPercent(geotaggedRate)} coverage` : 'Live',
+      trendTone: 'live' as const,
+    },
+    {
+      label: 'Departments engaged',
+      value: stats ? formatCount(departmentCount) : '—',
+      description: 'Unique departments touched by reported complaints',
+      loading: allComplaints.loading,
+      accent: 'purple' as const,
+      trend: 'Live breadth',
+      trendTone: 'live' as const,
+    },
+  ]
+
   return (
-    <div>
+    <div className="space-y-6 pb-4">
       <PageHeader
         title="Dashboard"
-        subtitle="Live overview · refreshes every 30 seconds"
+        subtitle="Government analytics overview with live complaint, AI, and department signals"
+        action={
+          <div className="flex flex-wrap gap-3">
+            <Link
+              to="/complaints"
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-brand-200 hover:text-brand-700"
+            >
+              Open complaints
+            </Link>
+            <Link
+              to="/complaint-pipeline"
+              className="rounded-full bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700"
+            >
+              Review pipeline
+            </Link>
+          </div>
+        }
       />
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Total reports" value={stats.total} />
-        <StatCard label="Pending" value={stats.pending} accent="yellow" />
-        <StatCard label="Assigned" value={stats.assigned} accent="blue" />
-        <StatCard label="In progress" value={stats.inProgress} accent="purple" />
-        <StatCard label="Resolved" value={stats.resolved} accent="green" />
-        <StatCard label="High severity" value={stats.highSeverity} accent="red" />
+      <div className="space-y-3">
+        {statsError && <ErrorState message={statsError} onRetry={reloadStats} />}
+        {recent.error && <ErrorState message={recent.error} onRetry={recent.reload} />}
+        {allComplaints.error && <ErrorState message={allComplaints.error} onRetry={allComplaints.reload} />}
       </div>
 
-      <section className="mt-10 rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">Financial Overview</h3>
-            <p className="text-sm text-slate-500">Budget sanctioned vs budget spent by road</p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-brand-700">Total funds allocated</p>
-              <p className="mt-1 text-2xl font-bold text-brand-900">{formatMoney(totalAllocated)}</p>
-            </div>
-            <div className="rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-brand-700">Total spent</p>
-              <p className="mt-1 text-2xl font-bold text-brand-900">{formatMoney(totalSpent)}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 h-[360px]">
-          {roadsLoading ? (
-            <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-brand-200 bg-brand-50/40 text-slate-500">
-              Loading...
-            </div>
-          ) : safeRoads.length ? (
-            <div className="h-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={financialRows} margin={{ top: 24, right: 24, left: 0, bottom: 84 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e9d5ff" />
-                  <XAxis
-                    dataKey="code"
-                    tick={<RoadAxisTick />}
-                    interval={skipEveryOtherXAxisLabel ? 1 : 0}
-                    height={76}
-                    tickLine={false}
-                    axisLine={{ stroke: '#ddd6fe' }}
-                  />
-                  <YAxis
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(value) => formatIndianAbbreviation(Number(value))}
-                    axisLine={{ stroke: '#ddd6fe' }}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'rgba(124, 58, 237, 0.08)' }}
-                    content={<FinancialTooltip />}
-                    wrapperStyle={{ outline: 'none' }}
-                  />
-                  <Legend />
-                  <Bar dataKey="sanctioned" name="Budget Sanctioned" fill="#7c3aed" radius={[8, 8, 0, 0]}>
-                    <LabelList
-                      position="top"
-                      fill="#6d28d9"
-                      fontSize={12}
-                      fontWeight={700}
-                      formatter={(value: number) => formatIndianAbbreviation(Number(value), true)}
-                    />
-                  </Bar>
-                  <Bar dataKey="spent" name="Budget Spent" fill="#a78bfa" radius={[8, 8, 0, 0]}>
-                    <LabelList
-                      position="top"
-                      fill="#7c3aed"
-                      fontSize={12}
-                      fontWeight={700}
-                      formatter={(value: number) => formatIndianAbbreviation(Number(value), true)}
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : financialRows.length ? (
-            <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-brand-200 bg-brand-50/40 text-slate-500">
-              No roads found yet.
-            </div>
-          ) : (
-            <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-brand-200 bg-brand-50/40 text-slate-500">
-              No roads found yet.
-            </div>
-          )}
-        </div>
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        {metrics.map((metric) => (
+          <StatCard
+            key={metric.label}
+            label={metric.label}
+            value={metric.value}
+            description={metric.description}
+            loading={metric.loading}
+            accent={metric.accent}
+            trend={metric.trend}
+            trendTone={metric.trendTone}
+          />
+        ))}
       </section>
 
-      <section className="mt-10">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-900">Recent complaints</h3>
-          <Link to="/complaints" className="text-sm font-medium text-brand-600 hover:underline">
-            View all
-          </Link>
-        </div>
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="grid gap-4 xl:grid-cols-12 2xl:gap-5">
+        <DashboardSection
+          className="xl:col-span-8"
+          title="Complaint trend"
+          subtitle="Live arrivals over the last 7 days"
+        >
+          <TrendLineChart
+            data={trendData}
+            series={[{ dataKey: 'total', name: 'Complaints received', color: '#7c3aed' }]}
+            loading={allComplaints.loading}
+            emptyTitle="No data available"
+            emptyDescription="Complaint history will appear here once reports are available."
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          className="xl:col-span-4"
+          title="Resolved vs pending trend"
+          subtitle="Workflow balance from the same live complaint stream"
+        >
+          <TrendLineChart
+            data={trendData}
+            series={[
+              { dataKey: 'resolved', name: 'Resolved', color: '#16a34a' },
+              { dataKey: 'pending', name: 'Pending', color: '#dc2626' },
+            ]}
+            loading={allComplaints.loading}
+            emptyTitle="No data available"
+            emptyDescription="Resolved and pending movement will appear once complaints exist."
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          className="xl:col-span-4"
+          title="YOLO detection distribution"
+          subtitle="Detected AI labels from complaint images"
+        >
+          <CategoryPieChart
+            data={labelData}
+            loading={allComplaints.loading}
+            emptyTitle="No data available"
+            emptyDescription="YOLO label distribution will appear after complaint analysis."
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          className="xl:col-span-4"
+          title="Complaint category"
+          subtitle="Reported road type mix for routing and planning"
+        >
+          <CategoryPieChart
+            data={categoryData}
+            loading={allComplaints.loading}
+            emptyTitle="No data available"
+            emptyDescription="Road type distribution will appear as complaints are reported."
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          className="xl:col-span-4"
+          title="Complaint status"
+          subtitle="Current workflow state distribution"
+        >
+          <StatusDonutChart
+            data={statusData}
+            loading={allComplaints.loading}
+            emptyTitle="No data available"
+            emptyDescription="Status distribution will appear once complaints are present."
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          className="xl:col-span-6"
+          title="Complaint severity"
+          subtitle="Escalation mix by severity level"
+        >
+          <SeverityBarChart
+            data={severityData}
+            loading={allComplaints.loading}
+            emptyTitle="No data available"
+            emptyDescription="Severity distribution will appear after complaints are submitted."
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          className="xl:col-span-6"
+          title="Department workload"
+          subtitle="Live distribution of complaints across departments"
+        >
+          <DepartmentPerformanceChart
+            data={departmentData}
+            loading={allComplaints.loading}
+            emptyTitle="No data available"
+            emptyDescription="Department workload will populate as complaints are assigned."
+          />
+        </DashboardSection>
+
+        <DashboardSection
+          className="xl:col-span-8"
+          title="Recent complaints"
+          subtitle="Latest complaints entering the workflow"
+        >
           {recent.loading ? (
-            <div className="p-8">
-              <LoadingState />
-            </div>
-          ) : recentDataInvalid ? (
+            <LoadingState message="Loading recent complaints…" />
+          ) : recentInvalid ? (
             <ErrorState message="Unexpected complaints response" onRetry={recent.reload} />
-          ) : safeComplaints.length ? (
-            <ComplaintTable complaints={safeComplaints} compact />
+          ) : recentComplaints.length ? (
+            <div className="overflow-hidden rounded-[22px] border border-slate-100">
+              <ComplaintTable complaints={recentComplaints} compact />
+            </div>
           ) : (
-            <p className="px-4 py-8 text-center text-slate-500">
-              No complaints yet. Upload from the mobile app.
-            </p>
+            <DashboardEmptyState
+              title="No data available"
+              description="Complaints submitted from the field will appear here once they reach the API."
+            />
           )}
-        </div>
-      </section>
+        </DashboardSection>
+
+        <DashboardSection
+          className="xl:col-span-4"
+          title="Emergency alerts"
+          subtitle="High-severity complaints that need attention"
+        >
+          {allComplaints.loading ? (
+            <LoadingState message="Scanning high-severity alerts…" />
+          ) : highSeverityComplaints.length ? (
+            <div className="space-y-2.5">
+              {highSeverityComplaints.map((complaint) => (
+                <article key={complaint.id} className="rounded-[22px] border border-rose-100 bg-gradient-to-br from-rose-50 to-white p-4 shadow-sm transition hover:shadow-md">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Complaint #{complaint.id}</p>
+                      <p className="mt-1 text-xs text-slate-600">{complaint.roadType || 'Road type not captured'}</p>
+                    </div>
+                    <Badge variant="severity" value={complaint.severity} />
+                  </div>
+
+                  <dl className="mt-3 space-y-2 text-sm text-slate-700">
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-slate-500">Status</dt>
+                      <dd className="font-medium">{complaint.status}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-slate-500">Department</dt>
+                      <dd className="font-medium">{complaint.department || 'Unassigned'}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-slate-500">Location</dt>
+                      <dd className="font-medium text-right">{formatComplaintLocation(complaint)}</dd>
+                    </div>
+                  </dl>
+
+                  <Link
+                    to={`/complaints/${complaint.id}`}
+                    className="mt-3 inline-flex text-sm font-medium text-brand-700 hover:underline"
+                  >
+                    Review complaint
+                  </Link>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <DashboardEmptyState
+              title="No data available"
+              description="High-severity complaints will surface here automatically when they are reported."
+            />
+          )}
+        </DashboardSection>
+
+        <DashboardSection
+          className="xl:col-span-12"
+          title="Complaint heatmap & map"
+          subtitle="Geo-tagged complaints ready for spatial review"
+        >
+          {allComplaints.loading ? (
+            <LoadingState message="Loading complaint map…" />
+          ) : (
+            <ComplaintMap complaints={complaints} height="460px" zoom={11} isLoading={allComplaints.loading} />
+          )}
+        </DashboardSection>
+      </div>
     </div>
   )
 }

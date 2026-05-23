@@ -11,7 +11,7 @@ export function Badge({ variant, value }: BadgeProps) {
   const className =
     variant === 'severity' ? severityClass(value) : statusClass(value)
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${className}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] whitespace-nowrap shadow-sm ${className}`}>
       {value}
     </span>
   )

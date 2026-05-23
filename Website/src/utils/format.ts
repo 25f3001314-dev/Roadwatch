@@ -24,25 +24,25 @@ export function parseDetections(json: string | null | undefined) {
 export function severityClass(severity: string): string {
   switch (severity?.toUpperCase()) {
     case 'HIGH':
-      return 'bg-red-100 text-red-800'
+      return 'border-rose-200 bg-rose-50 text-rose-700'
     case 'MEDIUM':
-      return 'bg-amber-100 text-amber-800'
+      return 'border-amber-200 bg-amber-50 text-amber-700'
     default:
-      return 'bg-green-100 text-green-800'
+      return 'border-emerald-200 bg-emerald-50 text-emerald-700'
   }
 }
 
 export function statusClass(status: string): string {
   switch (status?.toUpperCase()) {
     case 'PENDING':
-      return 'bg-yellow-100 text-yellow-800'
+      return 'border-amber-200 bg-amber-50 text-amber-700'
     case 'ASSIGNED':
-      return 'bg-blue-100 text-blue-800'
+      return 'border-sky-200 bg-sky-50 text-sky-700'
     case 'IN_PROGRESS':
-      return 'bg-purple-100 text-purple-800'
+      return 'border-violet-200 bg-violet-50 text-violet-700'
     case 'RESOLVED':
-      return 'bg-green-100 text-green-800'
+      return 'border-emerald-200 bg-emerald-50 text-emerald-700'
     default:
-      return 'bg-slate-100 text-slate-800'
+      return 'border-slate-200 bg-slate-50 text-slate-700'
   }
 }
