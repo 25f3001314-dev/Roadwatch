@@ -221,7 +221,7 @@ export default function Dashboard() {
         ))}
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-12 2xl:gap-5">
+      <div className="grid gap-4 xl:grid-cols-12 2xl:gap-5 items-start">
         <DashboardSection
           className="xl:col-span-8"
           title="Complaint trend"
