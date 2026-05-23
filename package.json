@@ -1,10 +1,10 @@
 {
   "private": true,
   "name": "roadwatch",
-  "workspaces": ["frontend"],
+  "workspaces": ["Website"],
   "scripts": {
-    "build": "npm run build --workspace frontend",
-    "dev": "npm run dev --workspace frontend",
-    "type-check": "npm run type-check --workspace frontend"
+    "build": "npm run build --workspace Website",
+    "dev": "npm run dev --workspace Website",
+    "type-check": "npm run type-check --workspace Website"
   }
 }
