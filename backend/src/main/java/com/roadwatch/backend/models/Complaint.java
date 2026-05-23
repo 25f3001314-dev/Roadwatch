@@ -3,6 +3,7 @@ package com.roadwatch.backend.models;
 import jakarta.persistence.*;
 import org.locationtech.jts.geom.Point;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.roadwatch.backend.config.PointToJsonSerializer;
 import com.roadwatch.backend.config.PointWktConverter;
@@ -24,6 +25,7 @@ public class Complaint {
     @JsonSerialize(using = PointToJsonSerializer.class)
     private Point location;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime timestamp;
 
     private String severity;
