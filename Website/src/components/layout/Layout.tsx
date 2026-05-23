@@ -1,11 +1,10 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { FilePlus2, LayoutDashboard, List, Map, LogOut, Menu, Route, UserRound } from 'lucide-react'
+import { LayoutDashboard, List, Map, LogOut, Menu, Route, UserRound } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useEffect, useState } from 'react'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/submit-complaint', label: 'Submit Complaint', icon: FilePlus2, end: true },
   { to: '/complaints', label: 'Complaints', icon: List, end: false },
   { to: '/roads', label: 'Roads & Contractors', icon: Route, end: false },
   { to: '/authorities', label: 'Authorities', icon: UserRound, end: false },

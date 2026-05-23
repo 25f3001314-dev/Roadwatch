@@ -16,13 +16,6 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
-  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
-    const headers = config.headers as Record<string, unknown> | undefined
-    if (headers) {
-      delete headers['Content-Type']
-      delete headers['content-type']
-    }
-  }
   return config
 })
 

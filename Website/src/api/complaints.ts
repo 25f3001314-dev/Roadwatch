@@ -43,10 +43,3 @@ export async function updateComplaint(
   const { data } = await api.patch<Complaint>(`${API_ROUTES.complaints}/${id}`, payload)
   return data
 }
-
-export async function createComplaint(formData: FormData): Promise<Complaint> {
-  const { data } = await api.post<Complaint>(API_ROUTES.complaints, formData)
-  return data
-}
-
-export const submitComplaint = createComplaint

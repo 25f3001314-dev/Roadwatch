@@ -5,7 +5,6 @@ import Login from '@/pages/Login'
 import Dashboard from '@/pages/Dashboard'
 import Complaints from '@/pages/Complaints'
 import ComplaintDetail from '@/pages/ComplaintDetail'
-import SubmitComplaint from '@/pages/SubmitComplaint'
 import MapView from '@/pages/MapView'
 import Roads from '@/pages/Roads'
 import Authorities from '@/pages/Authorities'
@@ -22,7 +21,6 @@ export default function App() {
         }
       >
         <Route index element={<Dashboard />} />
-        <Route path="submit-complaint" element={<SubmitComplaint />} />
         <Route path="complaints" element={<Complaints />} />
         <Route path="complaints/:id" element={<ComplaintDetail />} />
         <Route path="roads" element={<Roads />} />
