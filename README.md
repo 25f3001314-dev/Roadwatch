@@ -46,6 +46,23 @@ See [Website/README.md](Website/README.md) for details.
 | Database | Neon / Supabase (PostgreSQL) |
 | AI | Render / GPU server |
 
+## Environment variables for Render
+
+The backend requires the following production variables in Render or your hosting environment:
+
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+- `AI_SERVICE_URL`
+- `ROADWATCH_UPLOADS_DIR`
+- `ROADWATCH_PUBLIC_BASE_URL`
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
+- `JWT_SECRET`
+- `CORS_ALLOWED_ORIGINS`
+
+For development, use `docker-compose.yml` or `.env.example`.
+
 ## License
 
 See [LICENSE](LICENSE).
