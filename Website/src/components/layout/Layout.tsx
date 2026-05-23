@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/complaints', label: 'Complaints', icon: List, end: false },
+  { to: '/complaint-pipeline', label: 'Complaint Pipeline', icon: List, end: false },
   { to: '/roads', label: 'Roads & Contractors', icon: Route, end: false },
   { to: '/authorities', label: 'Authorities', icon: UserRound, end: false },
   { to: '/map', label: 'Map', icon: Map, end: false },

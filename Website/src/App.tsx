@@ -5,6 +5,7 @@ import Login from '@/pages/Login'
 import Dashboard from '@/pages/Dashboard'
 import Complaints from '@/pages/Complaints'
 import ComplaintDetail from '@/pages/ComplaintDetail'
+import ComplaintPipeline from '@/pages/ComplaintPipeline'
 import MapView from '@/pages/MapView'
 import Roads from '@/pages/Roads'
 import Authorities from '@/pages/Authorities'
@@ -23,6 +24,7 @@ export default function App() {
         <Route index element={<Dashboard />} />
         <Route path="complaints" element={<Complaints />} />
         <Route path="complaints/:id" element={<ComplaintDetail />} />
+        <Route path="complaint-pipeline" element={<ComplaintPipeline />} />
         <Route path="roads" element={<Roads />} />
         <Route path="authorities" element={<Authorities />} />
         <Route path="map" element={<MapView />} />

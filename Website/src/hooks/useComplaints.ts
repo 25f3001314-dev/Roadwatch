@@ -61,6 +61,10 @@ export function useComplaints(initialPage = 0, pageSize = PAGE_SIZE) {
     setPage(0)
   }
 
+  const updateLocalComplaint = (id: number, updatedComplaint: Complaint) => {
+    setComplaints(complaints.map(c => c.id === id ? updatedComplaint : c));
+  };
+
   return {
     complaints,
     totalPages,
@@ -72,5 +76,6 @@ export function useComplaints(initialPage = 0, pageSize = PAGE_SIZE) {
     loading,
     error,
     reload: load,
+    updateComplaint: updateLocalComplaint,
   }
 }
