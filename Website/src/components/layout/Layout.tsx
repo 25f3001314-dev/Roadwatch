@@ -68,7 +68,7 @@ export function Layout() {
             </button>
           </div>
         </div>
-        <nav className="flex-1 space-y-1.5 px-3 py-4">
+        <nav className="flex-1 overflow-y-auto space-y-1.5 px-3 py-4">
           {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
@@ -88,17 +88,20 @@ export function Layout() {
               <span className={collapsed ? 'hidden' : ''}>{label}</span>
             </NavLink>
           ))}
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className={`w-full flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/10 hover:text-white ${
+              collapsed ? 'justify-center px-0' : ''
+            }`}
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 transition group-hover:bg-white/10">
+              <LogOut size={18} aria-hidden />
+            </span>
+            <span className={collapsed ? 'hidden' : ''}>Logout</span>
+          </button>
         </nav>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className={`m-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-slate-200 transition hover:bg-white/10 hover:text-white ${
-            collapsed ? 'justify-center' : ''
-          }`}
-        >
-          <LogOut size={16} aria-hidden />
-          <span className={collapsed ? 'hidden' : ''}>Logout</span>
-        </button>
       </aside>
       <main className="flex-1 min-w-0 overflow-y-auto bg-slate-50 px-4 py-4 sm:px-6 sm:py-6 xl:px-8 xl:py-8">
         <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-6">
