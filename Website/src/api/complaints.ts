@@ -32,7 +32,7 @@ export async function fetchComplaint(id: number): Promise<Complaint> {
 }
 
 export async function fetchMapComplaints(): Promise<Complaint[]> {
-  const { data } = await api.get<Complaint[]>(API_ROUTES.complaints)
+  const { data } = await api.get<Complaint[]>(API_ROUTES.map)
   return data
 }
 

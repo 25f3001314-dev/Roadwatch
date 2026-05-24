@@ -47,6 +47,11 @@ public class ComplaintController {
         return complaintService.getStats();
     }
 
+    @PostMapping("/reanalyze")
+    public List<Complaint> reanalyzeComplaints() {
+        return complaintService.reanalyzeComplaintsWithMissingAiLabels();
+    }
+
     @GetMapping("/{id}")
     public Complaint getComplaint(@PathVariable Long id) {
         return complaintService.getById(id);

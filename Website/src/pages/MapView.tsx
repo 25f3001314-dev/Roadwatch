@@ -34,7 +34,7 @@ export default function MapView() {
       setError('')
 
       try {
-        const { data } = await api.get<unknown>(API_ROUTES.complaints)
+        const { data } = await api.get<unknown>(API_ROUTES.map)
         console.log('Map complaints API response:', data)
         const normalized = normalizeComplaints(data)
 

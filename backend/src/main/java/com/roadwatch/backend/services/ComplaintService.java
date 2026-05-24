@@ -17,7 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -181,6 +183,54 @@ public class ComplaintService {
         long highSeverity = all.stream().filter(c -> "HIGH".equalsIgnoreCase(c.getSeverity())).count();
 
         return new ComplaintStatsDto(total, pending, assigned, inProgress, resolved, highSeverity);
+    }
+
+    public List<Complaint> reanalyzeComplaintsWithMissingAiLabels() {
+        List<Complaint> complaintsToReanalyze = complaintRepository.findAll().stream()
+                .filter(c -> c.getAiLabel() == null
+                        || "none".equalsIgnoreCase(c.getAiLabel())
+                        || c.getSeverity() == null
+                        || c.getSeverity().trim().isEmpty()
+                        || "0".equals(c.getSeverity().trim()))
+                .toList();
+
+        List<Complaint> updated = new ArrayList<>();
+
+        for (Complaint complaint : complaintsToReanalyze) {
+            try {
+                String filename = extractFilenameFromUrl(complaint.getImageUrl());
+                if (filename == null) {
+                    continue;
+                }
+
+                Path imagePath = imageStorageService.resolve(filename);
+                var aiResponse = aiServiceClient.analyzeImage(imagePath, "/analyze_surface");
+                decisionEngineService.assignSeverityAndDepartment(complaint, aiResponse);
+
+                if (aiResponse != null && aiResponse.getDetections() != null) {
+                    complaint.setAiDetectionsJson(objectMapper.writeValueAsString(aiResponse.getDetections()));
+                }
+
+                updated.add(complaintRepository.save(complaint));
+            } catch (Exception ignored) {
+                // Skip individual failures and continue reanalysis for other complaints.
+            }
+        }
+
+        return updated;
+    }
+
+    private String extractFilenameFromUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return null;
+        }
+
+        int lastSlash = imageUrl.lastIndexOf('/');
+        if (lastSlash < 0 || lastSlash == imageUrl.length() - 1) {
+            return null;
+        }
+
+        return imageUrl.substring(lastSlash + 1);
     }
 
     public List<Complaint> getAllForMap() {
