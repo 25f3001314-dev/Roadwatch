@@ -2,9 +2,13 @@ package com.roadwatch.backend.models;
 
 import jakarta.persistence.*;
 import org.locationtech.jts.geom.Point;
-import java.time.LocalDateTime;
+import org.springframework.format.annotation.DateTimeFormat;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import java.time.LocalDateTime;
 import com.roadwatch.backend.config.PointToJsonSerializer;
 import com.roadwatch.backend.config.PointWktConverter;
 
@@ -25,7 +29,10 @@ public class Complaint {
     @JsonSerialize(using = PointToJsonSerializer.class)
     private Point location;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Kolkata")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime timestamp;
 
     private String severity;
