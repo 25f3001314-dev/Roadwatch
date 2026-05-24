@@ -4,6 +4,8 @@ import com.roadwatch.backend.dto.ComplaintStatsDto;
 import com.roadwatch.backend.dto.ComplaintUpdateRequest;
 import com.roadwatch.backend.models.Complaint;
 import com.roadwatch.backend.services.ComplaintService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/complaints")
 public class ComplaintController {
+    private static final Logger logger = LoggerFactory.getLogger(ComplaintController.class);
 
     @Autowired
     private ComplaintService complaintService;
@@ -58,7 +61,17 @@ public class ComplaintController {
     }
 
     @PatchMapping("/{id}")
-    public Complaint updateComplaint(@PathVariable Long id, @RequestBody ComplaintUpdateRequest request) {
-        return complaintService.updateComplaint(id, request);
+    public ResponseEntity<Complaint> updateComplaint(
+            @PathVariable Long id, 
+            @RequestBody ComplaintUpdateRequest request) {
+        logger.debug("PATCH /api/complaints/{} received with payload: {}", id, request);
+        try {
+            Complaint updated = complaintService.updateComplaint(id, request);
+            logger.info("Successfully updated complaint {}", id);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            logger.error("Error updating complaint {}: {}", id, e.getMessage(), e);
+            throw e;
+        }
     }
 }

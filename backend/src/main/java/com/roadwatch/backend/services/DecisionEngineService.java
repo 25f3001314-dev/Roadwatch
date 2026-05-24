@@ -3,10 +3,15 @@ package com.roadwatch.backend.services;
 import com.roadwatch.backend.dto.AiAnalysisResponseDto;
 import com.roadwatch.backend.dto.DetectionResultDto;
 import com.roadwatch.backend.models.Complaint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DecisionEngineService {
+    private static final Logger logger = LoggerFactory.getLogger(DecisionEngineService.class);
 
     public void assignSeverityAndDepartment(Complaint complaint, AiAnalysisResponseDto aiResponse) {
         complaint.setSeverity("LOW");
@@ -16,6 +21,11 @@ public class DecisionEngineService {
 
         if (aiResponse == null || !aiResponse.isSuccess()
                 || aiResponse.getDetections() == null || aiResponse.getDetections().isEmpty()) {
+            logger.debug("No AI detections available. Response: {}, aiResponse null: {}, success: {}, detections empty: {}",
+                    aiResponse, aiResponse == null,
+                    aiResponse != null && aiResponse.isSuccess(),
+                    aiResponse != null && (aiResponse.getDetections() == null || aiResponse.getDetections().isEmpty()));
+            logger.info("Using default values for complaint - aiLabel=none, aiConfidence=0.0 (no YOLO detections)");
             complaint.setAiLabel("none");
             complaint.setAiConfidence(0.0);
             return;

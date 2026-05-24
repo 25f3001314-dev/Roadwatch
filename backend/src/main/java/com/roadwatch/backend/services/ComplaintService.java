@@ -6,6 +6,8 @@ import com.roadwatch.backend.dto.ComplaintStatsDto;
 import com.roadwatch.backend.dto.ComplaintUpdateRequest;
 import com.roadwatch.backend.models.Complaint;
 import com.roadwatch.backend.repositories.ComplaintRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +23,7 @@ import java.util.Set;
 
 @Service
 public class ComplaintService {
+    private static final Logger logger = LoggerFactory.getLogger(ComplaintService.class);
 
     private static final Set<String> VALID_STATUSES = Set.of(
             "PENDING", "ASSIGNED", "IN_PROGRESS", "RESOLVED"
@@ -52,7 +55,9 @@ public class ComplaintService {
         }
 
         try {
+            // ImageStorageService now auto-detects request context for correct HTTPS/HTTP URL
             String imageUrl = imageStorageService.store(image);
+            logger.debug("Complaint image stored at: {}", imageUrl);
             complaint.setImageUrl(imageUrl);
 
             AiAnalysisResponseDto aiResponse = null;
@@ -62,6 +67,8 @@ public class ComplaintService {
                 if (!aiOptional) {
                     throw aiEx;
                 }
+                logger.warn("AI service call failed but roadwatch.ai.optional=true. YOLO detections will be missing. Error: {}",
+                        aiEx.getMessage(), aiEx);
             }
             decisionEngineService.assignSeverityAndDepartment(complaint, aiResponse);
 
@@ -119,11 +126,15 @@ public class ComplaintService {
     }
 
     public Complaint updateComplaint(Long id, ComplaintUpdateRequest request) {
+        logger.debug("Updating complaint {} with request: {}", id, request);
         Complaint complaint = getById(id);
 
-        if (request.getStatus() != null) {
+        // Only update status if provided and not blank
+        if (request.getStatus() != null && !request.getStatus().isBlank()) {
             String status = request.getStatus().trim().toUpperCase();
+            logger.debug("Validating status: {}", status);
             if (!VALID_STATUSES.contains(status)) {
+                logger.warn("Invalid status '{}' provided. Allowed: {}", status, VALID_STATUSES);
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
                         "Invalid status. Allowed: " + VALID_STATUSES
@@ -132,22 +143,31 @@ public class ComplaintService {
             complaint.setStatus(status);
         }
 
+        // Only update department if provided and not blank
         if (request.getDepartment() != null && !request.getDepartment().isBlank()) {
-            complaint.setDepartment(request.getDepartment().trim());
+            String department = request.getDepartment().trim();
+            logger.debug("Setting department: {}", department);
+            complaint.setDepartment(department);
         }
 
+        // Only update severity if provided and not blank
         if (request.getSeverity() != null && !request.getSeverity().isBlank()) {
             String severity = request.getSeverity().trim().toUpperCase();
+            logger.debug("Validating severity: {}", severity);
             if (!VALID_SEVERITIES.contains(severity)) {
+                logger.warn("Invalid severity '{}' provided. Allowed: {}", severity, VALID_SEVERITIES);
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid severity");
             }
             complaint.setSeverity(severity);
         }
 
+        // Update admin notes (can be empty string or null)
         if (request.getAdminNotes() != null) {
+            logger.debug("Setting admin notes");
             complaint.setAdminNotes(request.getAdminNotes());
         }
 
+        logger.info("Complaint {} updated successfully", id);
         return complaintRepository.save(complaint);
     }
 

@@ -1,6 +1,8 @@
 package com.roadwatch.backend.services;
 
 import com.roadwatch.backend.dto.AiAnalysisResponseDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -15,6 +17,7 @@ import java.util.Collections;
 
 @Service
 public class AiServiceClient {
+    private static final Logger logger = LoggerFactory.getLogger(AiServiceClient.class);
 
     @Autowired
     private RestTemplate restTemplate;
@@ -53,10 +56,7 @@ public class AiServiceClient {
             }
             return result;
         } catch (RestClientException e) {
-            // Fallback: try /analyze
-            if (!"/analyze".equals(endpoint)) {
-                return analyzeImage(file, "/analyze");
-            }
+            logger.error("🚨 YOLO AI Service fails to connect at URL: {}. Error: {}", aiServiceUrl, e.getMessage());
             return emptyFailure();
         }
     }
