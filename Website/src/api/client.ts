@@ -1,9 +1,9 @@
 import axios from 'axios'
 import { AUTH_STORAGE_KEY } from '@/constants/config'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://roadwatch-mb82.onrender.com'
 
-console.log('[RoadWatch] API base URL:', API_BASE || '(same-origin / empty)')
+console.log('[RoadWatch] API base URL:', API_BASE)
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -13,9 +13,15 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem(AUTH_STORAGE_KEY)
+  const headers = config.headers ? { ...(config.headers as Record<string, string>) } : {}
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    headers.Authorization = `Bearer ${token}`
+    console.debug('[RoadWatch] Attached Authorization header to request')
+  } else {
+    console.debug('[RoadWatch] No token found in localStorage for Authorization header')
   }
+
+  config.headers = headers as unknown as typeof config.headers
   return config
 })
 
