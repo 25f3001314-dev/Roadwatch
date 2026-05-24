@@ -1,15 +1,18 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, List, Map, LogOut, Menu, Route, BriefcaseBusiness } from 'lucide-react'
+import { BarChart3, Briefcase, FileText, LayoutDashboard, List, LogOut, Menu, Route, Settings2, ShieldAlert, Users } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useEffect, useState } from 'react'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/complaints', label: 'Incoming Complaints', icon: List, end: false },
-  { to: '/complaint-pipeline', label: 'Complaint Pipeline', icon: List, end: false },
-  { to: '/roads', label: 'Roads & Contractors', icon: Route, end: false },
-  { to: '/authorities', label: 'Departments', icon: BriefcaseBusiness, end: false },
-  { to: '/map', label: 'Map', icon: Map, end: false },
+  { to: '/complaint-pipeline', label: 'Assigned / Forwarded Complaints', icon: Route, end: false },
+  { to: '/authorities', label: 'Departments', icon: Briefcase, end: false },
+  { to: '/roads', label: 'Officers / Employees', icon: Users, end: false },
+  { to: '/map', label: 'Reports & Analytics', icon: BarChart3, end: false },
+  { to: '/emergency-cases', label: 'Emergency Cases', icon: ShieldAlert, end: false },
+  { to: '/resolved-complaints', label: 'Resolved Complaints', icon: FileText, end: false },
+  { to: '/settings', label: 'Settings', icon: Settings2, end: false },
 ] as const
 
 export function Layout() {

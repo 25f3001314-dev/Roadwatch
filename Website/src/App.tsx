@@ -9,6 +9,9 @@ import ComplaintPipeline from '@/pages/ComplaintPipeline'
 import MapView from '@/pages/MapView'
 import Roads from '@/pages/Roads'
 import Authorities from '@/pages/Authorities'
+import EmergencyCases from '@/pages/EmergencyCases'
+import ResolvedComplaints from '@/pages/ResolvedComplaints'
+import Settings from '@/pages/Settings'
 
 export default function App() {
   return (
@@ -28,6 +31,9 @@ export default function App() {
         <Route path="roads" element={<Roads />} />
         <Route path="authorities" element={<Authorities />} />
         <Route path="map" element={<MapView />} />
+        <Route path="emergency-cases" element={<EmergencyCases />} />
+        <Route path="resolved-complaints" element={<ResolvedComplaints />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -57,9 +57,11 @@ export interface ComplaintUpdatePayload {
 }
 
 export const DEPARTMENTS = [
-  'Roads Authority',
-  'Civic Maintenance',
-  'Street Lighting',
+  'PWD',
+  'Municipal Corporation',
+  'Traffic Police',
+  'Electricity Dept',
+  'Water Dept',
 ] as const
 
 export const STATUSES = ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'] as const

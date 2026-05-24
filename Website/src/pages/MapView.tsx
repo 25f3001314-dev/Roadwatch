@@ -62,11 +62,11 @@ export default function MapView() {
   return (
     <div>
       <PageHeader
-        title="Map view"
+        title="Reports & Analytics"
         subtitle={
           complaints
             ? `${withGps.length} of ${complaints.length} complaints have GPS coordinates`
-            : undefined
+            : 'Visualize complaint distribution and analytics.'
         }
       />
       <div className="mt-6">

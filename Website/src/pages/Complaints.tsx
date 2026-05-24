@@ -21,7 +21,10 @@ export default function Complaints() {
 
   return (
     <div>
-      <PageHeader title="Complaints" subtitle="Filter and manage road damage reports" />
+      <PageHeader
+        title="Incoming Complaints"
+        subtitle="Review incoming road issue reports and forward them to the right department."
+      />
 
       <div className="mt-6">
         <ComplaintFilters filters={filters} onChange={updateFilter} onClear={clearFilters} />
