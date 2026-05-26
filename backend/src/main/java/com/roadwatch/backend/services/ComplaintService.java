@@ -28,7 +28,7 @@ public class ComplaintService {
     private static final Logger logger = LoggerFactory.getLogger(ComplaintService.class);
 
     private static final Set<String> VALID_STATUSES = Set.of(
-            "PENDING", "ASSIGNED", "IN_PROGRESS", "RESOLVED"
+            "PENDING", "UNDER_REVIEW", "REJECTED", "ASSIGNED", "IN_PROGRESS", "RESOLVED"
     );
 
     private static final Set<String> VALID_SEVERITIES = Set.of("HIGH", "MEDIUM", "LOW");
@@ -47,6 +47,12 @@ public class ComplaintService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired(required = false)
+    private SmartRoutingEngine routingEngine;
+
+    @Autowired(required = false)
+    private com.roadwatch.backend.repositories.ComplaintAssignmentHistoryRepository historyRepository;
 
     @org.springframework.beans.factory.annotation.Value("${roadwatch.ai.optional:false}")
     private boolean aiOptional;
@@ -81,7 +87,21 @@ public class ComplaintService {
             complaint.setStatus("PENDING");
             complaint.setTimestamp(LocalDateTime.now());
 
-            return complaintRepository.save(complaint);
+            // Persist first so the routing audit trail can reference complaint id.
+            Complaint saved = complaintRepository.save(complaint);
+
+            // Smart routing — non-fatal, additive.
+            if (routingEngine != null) {
+                try {
+                    var decision = routingEngine.route(saved);
+                    routingEngine.applyDecision(saved, decision, "system", "AUTO");
+                    saved = complaintRepository.save(saved);
+                } catch (Exception routeEx) {
+                    logger.warn("Smart routing failed for complaint {}: {}",
+                            saved.getId(), routeEx.getMessage());
+                }
+            }
+            return saved;
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
@@ -98,28 +118,77 @@ public class ComplaintService {
             String severity,
             String department,
             String roadType,
+            String q,
+            Double lat,
+            Double lng,
+            Double radiusKm,
+            Boolean emergency,
+            Long roadId,
+            Long authorityId,
             Pageable pageable
     ) {
         Specification<Complaint> spec = Specification.where(null);
 
         if (status != null && !status.isBlank()) {
-            spec = spec.and((root, q, cb) ->
+            spec = spec.and((root, query, cb) ->
                     cb.equal(cb.upper(root.get("status")), status.trim().toUpperCase()));
         }
         if (severity != null && !severity.isBlank()) {
-            spec = spec.and((root, q, cb) ->
+            spec = spec.and((root, query, cb) ->
                     cb.equal(cb.upper(root.get("severity")), severity.trim().toUpperCase()));
         }
         if (department != null && !department.isBlank()) {
-            spec = spec.and((root, q, cb) ->
+            spec = spec.and((root, query, cb) ->
                     cb.like(cb.lower(root.get("department")), "%" + department.trim().toLowerCase() + "%"));
         }
         if (roadType != null && !roadType.isBlank()) {
-            spec = spec.and((root, q, cb) ->
+            spec = spec.and((root, query, cb) ->
                     cb.equal(cb.upper(root.get("roadType")), roadType.trim().toUpperCase()));
         }
+        if (q != null && !q.isBlank()) {
+            String pattern = "%" + q.trim().toLowerCase() + "%";
+            spec = spec.and((root, query, cb) -> cb.or(
+                    cb.like(cb.lower(root.get("description")), pattern),
+                    cb.like(cb.lower(root.get("aiLabel")), pattern),
+                    cb.like(cb.lower(root.get("assignedAuthorityName")), pattern)
+            ));
+        }
+        if (Boolean.TRUE.equals(emergency)) {
+            spec = spec.and((root, query, cb) -> cb.isTrue(root.get("emergency")));
+        }
+        if (roadId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("roadId"), roadId));
+        }
+        if (authorityId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("assignedAuthorityId"), authorityId));
+        }
 
-        return complaintRepository.findAll(spec, pageable);
+        Page<Complaint> result = complaintRepository.findAll(spec, pageable);
+
+        // Geo-radius post-filter (Point not directly comparable in CriteriaQuery
+        // without PostGIS-specific functions; safe at admin-dashboard scale).
+        if (lat != null && lng != null && radiusKm != null && radiusKm > 0) {
+            final double radiusKmFinal = radiusKm;
+            final double latFinal = lat;
+            final double lngFinal = lng;
+            java.util.List<Complaint> filtered = result.getContent().stream()
+                    .filter(c -> c.getLocation() != null)
+                    .filter(c -> haversineKm(latFinal, lngFinal,
+                            c.getLocation().getY(), c.getLocation().getX()) <= radiusKmFinal)
+                    .toList();
+            return new org.springframework.data.domain.PageImpl<>(filtered, pageable, filtered.size());
+        }
+        return result;
+    }
+
+    private static double haversineKm(double lat1, double lon1, double lat2, double lon2) {
+        double R = 6371.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     public Complaint getById(Long id) {
@@ -142,7 +211,14 @@ public class ComplaintService {
                         "Invalid status. Allowed: " + VALID_STATUSES
                 );
             }
+            String previous = complaint.getStatus();
             complaint.setStatus(status);
+            if ("RESOLVED".equalsIgnoreCase(status) && complaint.getResolvedAt() == null) {
+                complaint.setResolvedAt(LocalDateTime.now());
+            }
+            if (!status.equalsIgnoreCase(previous)) {
+                logger.info("Complaint {} status: {} -> {}", id, previous, status);
+            }
         }
 
         // Only update department if provided and not blank
@@ -177,12 +253,14 @@ public class ComplaintService {
         List<Complaint> all = complaintRepository.findAll();
         long total = all.size();
         long pending = all.stream().filter(c -> "PENDING".equalsIgnoreCase(c.getStatus())).count();
+        long underReview = all.stream().filter(c -> "UNDER_REVIEW".equalsIgnoreCase(c.getStatus())).count();
+        long rejected = all.stream().filter(c -> "REJECTED".equalsIgnoreCase(c.getStatus())).count();
         long assigned = all.stream().filter(c -> "ASSIGNED".equalsIgnoreCase(c.getStatus())).count();
         long inProgress = all.stream().filter(c -> "IN_PROGRESS".equalsIgnoreCase(c.getStatus())).count();
         long resolved = all.stream().filter(c -> "RESOLVED".equalsIgnoreCase(c.getStatus())).count();
         long highSeverity = all.stream().filter(c -> "HIGH".equalsIgnoreCase(c.getSeverity())).count();
 
-        return new ComplaintStatsDto(total, pending, assigned, inProgress, resolved, highSeverity);
+        return new ComplaintStatsDto(total, pending, underReview, rejected, assigned, inProgress, resolved, highSeverity);
     }
 
     public List<Complaint> reanalyzeComplaintsWithMissingAiLabels() {
@@ -235,5 +313,47 @@ public class ComplaintService {
 
     public List<Complaint> getAllForMap() {
         return complaintRepository.findAll();
+    }
+
+    public List<Complaint> getEmergencyCases() {
+        return complaintRepository.findAll().stream()
+                .filter(c -> "HIGH".equalsIgnoreCase(c.getSeverity()))
+                .filter(c -> !"RESOLVED".equalsIgnoreCase(c.getStatus()))
+                .filter(c -> !"REJECTED".equalsIgnoreCase(c.getStatus()))
+                .sorted((a, b) -> {
+                    if (a.getTimestamp() == null) return 1;
+                    if (b.getTimestamp() == null) return -1;
+                    return b.getTimestamp().compareTo(a.getTimestamp());
+                })
+                .toList();
+    }
+
+    public List<Complaint> getResolvedComplaints() {
+        return complaintRepository.findAll().stream()
+                .filter(c -> "RESOLVED".equalsIgnoreCase(c.getStatus()))
+                .sorted((a, b) -> {
+                    if (a.getTimestamp() == null) return 1;
+                    if (b.getTimestamp() == null) return -1;
+                    return b.getTimestamp().compareTo(a.getTimestamp());
+                })
+                .toList();
+    }
+
+    public java.util.Map<String, Object> getTimeline(Long id) {
+        Complaint c = getById(id);
+        java.util.Map<String, Object> out = new java.util.HashMap<>();
+        out.put("complaint", c);
+        out.put("currentStatus", c.getStatus());
+        out.put("expectedRepairDate", c.getExpectedRepairDate());
+        out.put("resolvedAt", c.getResolvedAt());
+        out.put("assignedAuthorityId", c.getAssignedAuthorityId());
+        out.put("assignedAuthorityName", c.getAssignedAuthorityName());
+        out.put("emergency", c.getEmergency());
+        if (historyRepository != null) {
+            out.put("events", historyRepository.findByComplaintIdOrderByOccurredAtAsc(id));
+        } else {
+            out.put("events", java.util.List.of());
+        }
+        return out;
     }
 }

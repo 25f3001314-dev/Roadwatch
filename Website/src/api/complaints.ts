@@ -33,7 +33,17 @@ export async function fetchComplaint(id: number): Promise<Complaint> {
 
 export async function fetchMapComplaints(): Promise<Complaint[]> {
   const { data } = await api.get<Complaint[]>(API_ROUTES.map)
-  return data
+  return Array.isArray(data) ? data : []
+}
+
+export async function fetchEmergencyCases(): Promise<Complaint[]> {
+  const { data } = await api.get<Complaint[]>(API_ROUTES.emergency)
+  return Array.isArray(data) ? data : []
+}
+
+export async function fetchResolvedComplaints(): Promise<Complaint[]> {
+  const { data } = await api.get<Complaint[]>(API_ROUTES.resolved)
+  return Array.isArray(data) ? data : []
 }
 
 export async function updateComplaint(

@@ -1,9 +1,15 @@
 package com.roadwatch.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class BoundingBoxDto {
+    @JsonProperty("xMin")
     private double xMin;
+    @JsonProperty("yMin")
     private double yMin;
+    @JsonProperty("xMax")
     private double xMax;
+    @JsonProperty("yMax")
     private double yMax;
 
     public double getxMin() { return xMin; }

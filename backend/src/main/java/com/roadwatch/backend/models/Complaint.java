@@ -8,12 +8,19 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import com.roadwatch.backend.config.PointToJsonSerializer;
 import com.roadwatch.backend.config.PointWktConverter;
 
 @Entity
-@Table(name = "complaints")
+@Table(name = "complaints",
+       indexes = {
+           @Index(name = "idx_complaint_status", columnList = "status"),
+           @Index(name = "idx_complaint_severity", columnList = "severity"),
+           @Index(name = "idx_complaint_department", columnList = "department"),
+           @Index(name = "idx_complaint_road_id", columnList = "roadId")
+       })
 public class Complaint {
 
     @Id
@@ -53,6 +60,38 @@ public class Complaint {
     @Column(columnDefinition = "TEXT")
     private String adminNotes;
 
+    // ─── Smart routing & lifecycle (additive, all nullable) ────────────
+
+    /** Foreign-key style reference to a known Road row. */
+    private Long roadId;
+
+    /** Foreign-key style reference to the Authority/Officer assigned. */
+    private Long assignedAuthorityId;
+
+    /** Snapshot of authority name at time of assignment (display optimisation). */
+    private String assignedAuthorityName;
+
+    /** Owning department resolved by the routing engine. */
+    private String routedDepartment;
+
+    /** Free-text jurisdiction descriptor populated by routing engine. */
+    private String jurisdictionTag;
+
+    /** Was this routed automatically by the system or manually by an admin. */
+    private String routingMode; // AUTO | MANUAL
+
+    /** Promotion flag — set when severity HIGH or AI confidence very high. */
+    private Boolean emergency;
+
+    /** ETA committed to the citizen. */
+    private LocalDate expectedRepairDate;
+
+    /** When the complaint was finally resolved. */
+    private LocalDateTime resolvedAt;
+
+    /** Optional citizen-supplied contact (preserved from current API; nullable). */
+    private String reporterContact;
+
     public Complaint() {}
 
     public Long getId() { return id; }
@@ -81,4 +120,25 @@ public class Complaint {
     public void setAiDetectionsJson(String aiDetectionsJson) { this.aiDetectionsJson = aiDetectionsJson; }
     public String getAdminNotes() { return adminNotes; }
     public void setAdminNotes(String adminNotes) { this.adminNotes = adminNotes; }
+
+    public Long getRoadId() { return roadId; }
+    public void setRoadId(Long roadId) { this.roadId = roadId; }
+    public Long getAssignedAuthorityId() { return assignedAuthorityId; }
+    public void setAssignedAuthorityId(Long assignedAuthorityId) { this.assignedAuthorityId = assignedAuthorityId; }
+    public String getAssignedAuthorityName() { return assignedAuthorityName; }
+    public void setAssignedAuthorityName(String assignedAuthorityName) { this.assignedAuthorityName = assignedAuthorityName; }
+    public String getRoutedDepartment() { return routedDepartment; }
+    public void setRoutedDepartment(String routedDepartment) { this.routedDepartment = routedDepartment; }
+    public String getJurisdictionTag() { return jurisdictionTag; }
+    public void setJurisdictionTag(String jurisdictionTag) { this.jurisdictionTag = jurisdictionTag; }
+    public String getRoutingMode() { return routingMode; }
+    public void setRoutingMode(String routingMode) { this.routingMode = routingMode; }
+    public Boolean getEmergency() { return emergency; }
+    public void setEmergency(Boolean emergency) { this.emergency = emergency; }
+    public LocalDate getExpectedRepairDate() { return expectedRepairDate; }
+    public void setExpectedRepairDate(LocalDate expectedRepairDate) { this.expectedRepairDate = expectedRepairDate; }
+    public LocalDateTime getResolvedAt() { return resolvedAt; }
+    public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
+    public String getReporterContact() { return reporterContact; }
+    public void setReporterContact(String reporterContact) { this.reporterContact = reporterContact; }
 }

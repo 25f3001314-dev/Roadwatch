@@ -10,13 +10,14 @@ backend/uploads/*
 # Frontend
 node_modules/
 Website/node_modules/
-*.tsbuildinfo
 Website/dist/
 Website/.vercel/
 Website/.env.local
-Website/*.tsbuildinfo
-Website/vite.config.js
-Website/vite.config.d.ts
+Website/.env.*.local
+*.tsbuildinfo
+
+# Vercel
+.vercel/
 
 # AI
 ai_service/__pycache__/
@@ -28,3 +29,6 @@ ai_service/__pycache__/
 .idea/
 .vscode/
 *.log
+
+# VS Code workspace files (must not live in source tree)
+*.code-workspace

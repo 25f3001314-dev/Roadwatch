@@ -1,46 +1,50 @@
-import { useEffect, useState } from 'react'
-import { api } from '@/api/client'
-import { API_ROUTES } from '@/constants/config'
-import { createRoad, updateRoad, deleteRoad } from '@/api/roads'
-import type { Road } from '@/types/road'
-import { formatDate } from '@/utils/format'
-import { Plus, Edit2, Trash2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Plus, Edit2, Trash2, Search, Mail, Phone, MapPin } from 'lucide-react'
+import {
+  fetchOfficers,
+  createOfficer,
+  updateOfficer,
+  deleteOfficer,
+  type Officer,
+} from '@/api/officers'
+import { getApiErrorMessage } from '@/api/client'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { PageHeader } from '@/components/ui/PageHeader'
 
-function normalizeRoadsResponse(data: unknown): Road[] {
-  if (Array.isArray(data)) return data as Road[]
-  if (Array.isArray((data as { data?: unknown } | null | undefined)?.data)) {
-    return ((data as { data: unknown[] }).data ?? []) as Road[]
-  }
-  if (Array.isArray((data as { content?: unknown } | null | undefined)?.content)) {
-    return ((data as { content: unknown[] }).content ?? []) as Road[]
-  }
-  return []
+const EMPTY: Partial<Officer> = {
+  name: '',
+  designation: '',
+  zone: '',
+  email: '',
+  phone: '',
+  district: '',
 }
 
+/**
+ * Officers / Employees admin page.
+ * Mounted at `/roads` (sidebar link "Officers / Employees").
+ *
+ * Backed by GET/POST/PUT/DELETE /api/officers (alias of authorities).
+ */
 export default function Roads() {
-  const [roads, setRoads] = useState<Road[]>([])
+  const [officers, setOfficers] = useState<Officer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState<Partial<Road>>({ roadType: 'NH' })
+  const [editing, setEditing] = useState<Officer | null>(null)
+  const [form, setForm] = useState<Partial<Officer>>(EMPTY)
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
     setLoading(true)
     setError('')
     try {
-      const { data } = await api.get<unknown>(API_ROUTES.roads)
-      console.log('Roads API response:', data)
-      const normalized = normalizeRoadsResponse(data)
-      setRoads(normalized)
-      if (!normalized.length) {
-        setError('No roads returned from the API.')
-      }
-    } catch (error) {
-      console.error('Failed to load roads:', error)
-      setError('Failed to load roads. Please try again.')
-      setRoads([])
+      setOfficers(await fetchOfficers())
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to load officers'))
+      setOfficers([])
     } finally {
       setLoading(false)
     }
@@ -50,34 +54,57 @@ export default function Roads() {
     load()
   }, [])
 
-  const handleCreate = async () => {
-    setSaving(true)
-    try {
-      await createRoad(form)
-      setShowModal(false)
-      setForm({ roadType: 'NH' })
-      await load()
-    } finally {
-      setSaving(false)
-    }
+  const filtered = useMemo(() => {
+    if (!search.trim()) return officers
+    const q = search.trim().toLowerCase()
+    return officers.filter(
+      (o) =>
+        o.name?.toLowerCase().includes(q) ||
+        o.designation?.toLowerCase().includes(q) ||
+        o.email?.toLowerCase().includes(q) ||
+        o.zone?.toLowerCase().includes(q) ||
+        o.district?.toLowerCase().includes(q),
+    )
+  }, [officers, search])
+
+  const openCreate = () => {
+    setEditing(null)
+    setForm(EMPTY)
+    setShowModal(true)
   }
 
-  const handleUpdate = async (id: number, payload: Partial<Road>) => {
+  const openEdit = (o: Officer) => {
+    setEditing(o)
+    setForm(o)
+    setShowModal(true)
+  }
+
+  const handleSave = async () => {
+    if (!form.name?.trim()) {
+      setError('Name is required')
+      return
+    }
     setSaving(true)
     try {
-      await updateRoad(id, payload)
+      if (editing) await updateOfficer(editing.id, form)
+      else await createOfficer(form)
+      setShowModal(false)
       await load()
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to save officer'))
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this road?')) return
+    if (!confirm('Delete this officer?')) return
     setSaving(true)
     try {
-      await deleteRoad(id)
+      await deleteOfficer(id)
       await load()
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to delete officer'))
     } finally {
       setSaving(false)
     }
@@ -85,156 +112,190 @@ export default function Roads() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-900">Roads & Contractors</h2>
+      <PageHeader
+        title="Officers / Employees"
+        subtitle="Field officers and department employees that complaints can be assigned to."
+      />
+
+      <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative max-w-md flex-1">
+          <Search
+            size={14}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            type="search"
+            placeholder="Search by name, role, district…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+          />
+        </div>
         <button
-          onClick={() => setShowModal(true)}
+          type="button"
+          onClick={openCreate}
           className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
         >
-          <Plus size={16} /> Add Road
+          <Plus size={16} /> Add officer
         </button>
       </div>
 
-      <div className="mt-6 overflow-auto rounded-xl border border-slate-200 bg-white p-4">
-        {loading ? (
-          <LoadingState message="Loading roads…" />
-        ) : error ? (
-          <p className="text-sm text-rose-600">{error}</p>
-        ) : (
-          <table className="w-full table-auto">
-            <thead>
-              <tr className="text-left text-sm text-slate-500">
-                <th className="px-2 py-2">Road Name</th>
-                <th className="px-2 py-2">Road Type</th>
-                <th className="px-2 py-2">Contractor</th>
-                <th className="px-2 py-2">Last Relaying</th>
-                <th className="px-2 py-2">Budget Sanctioned</th>
-                <th className="px-2 py-2">Budget Spent</th>
-                <th className="px-2 py-2">Status</th>
-                <th className="px-2 py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roads.map((r) => (
-                <tr key={r.id} className="border-t text-sm">
-                  <td className="px-2 py-3">{r.name}</td>
-                  <td className="px-2 py-3">{r.roadType}</td>
-                  <td className="px-2 py-3">{r.contractorName}</td>
-                  <td className="px-2 py-3">{r.lastRelayingDate ? formatDate(r.lastRelayingDate) : '—'}</td>
-                  <td className="px-2 py-3">{r.budgetSanctioned ?? '—'}</td>
-                  <td className="px-2 py-3">{r.budgetSpent ?? '—'}</td>
-                  <td className="px-2 py-3">{r.status}</td>
-                  <td className="px-2 py-3">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          const name = prompt('New name', r.name)
-                          if (name) handleUpdate(r.id, { name })
-                        }}
-                        className="rounded-md bg-slate-100 px-2 py-1 text-sm text-slate-800 hover:bg-slate-200"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(r.id)}
-                        className="rounded-md bg-red-50 px-2 py-1 text-sm text-red-700 hover:bg-red-100"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {error && (
+        <div className="mt-4">
+          <ErrorState message={error} onRetry={load} />
+        </div>
+      )}
+
+      {loading ? (
+        <div className="mt-8">
+          <LoadingState message="Loading officers…" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="mt-6 rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+          {search ? 'No officers match your search.' : 'No officers yet — add the first one above.'}
+        </div>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((o) => (
+            <article
+              key={o.id}
+              className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">{o.name}</h3>
+                  {o.designation && (
+                    <p className="mt-0.5 text-sm text-slate-600">{o.designation}</p>
+                  )}
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => openEdit(o)}
+                    className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(o.id)}
+                    className="rounded-lg p-1.5 text-rose-500 hover:bg-rose-50"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-2 text-sm text-slate-600">
+                {o.email && (
+                  <p className="flex items-center gap-2">
+                    <Mail size={12} className="text-slate-400" />
+                    <span className="truncate">{o.email}</span>
+                  </p>
+                )}
+                {o.phone && (
+                  <p className="flex items-center gap-2">
+                    <Phone size={12} className="text-slate-400" /> {o.phone}
+                  </p>
+                )}
+                {(o.zone || o.district) && (
+                  <p className="flex items-center gap-2">
+                    <MapPin size={12} className="text-slate-400" />
+                    {[o.zone, o.district].filter(Boolean).join(' · ')}
+                  </p>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
 
       {showModal && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-lg">
-            <h3 className="text-lg font-semibold">Add Road</h3>
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div className="md:col-span-1">
-                <label className="mb-1 block text-xs font-medium text-slate-700">Name</label>
-                <input
-                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
-                  value={form.name || ''}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
-              </div>
-
-              <div className="md:col-span-1">
-                <label className="mb-1 block text-xs font-medium text-slate-700">Road Type</label>
-                <select
-                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
-                  value={form.roadType}
-                  onChange={(e) => setForm({ ...form, roadType: e.target.value })}
-                >
-                  <option value="NH">NH</option>
-                  <option value="SH">SH</option>
-                  <option value="MDR">MDR</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-1">
-                <label className="mb-1 block text-xs font-medium text-slate-700">Contractor</label>
-                <input
-                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
-                  value={form.contractorName || ''}
-                  onChange={(e) => setForm({ ...form, contractorName: e.target.value })}
-                />
-              </div>
-
-              <div className="md:col-span-1">
-                <label className="mb-1 block text-xs font-medium text-slate-700">Last Relaying Date</label>
-                <input
-                  type="date"
-                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
-                  value={form.lastRelayingDate || ''}
-                  onChange={(e) => setForm({ ...form, lastRelayingDate: e.target.value })}
-                />
-              </div>
-
-              <div className="md:col-span-1">
-                <label className="mb-1 block text-xs font-medium text-slate-700">Budget Sanctioned</label>
-                <input
-                  type="number"
-                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
-                  value={form.budgetSanctioned ?? ''}
-                  onChange={(e) => setForm({ ...form, budgetSanctioned: Number(e.target.value) })}
-                />
-              </div>
-
-              <div className="md:col-span-1">
-                <label className="mb-1 block text-xs font-medium text-slate-700">Budget Spent</label>
-                <input
-                  type="number"
-                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
-                  value={form.budgetSpent ?? ''}
-                  onChange={(e) => setForm({ ...form, budgetSpent: Number(e.target.value) })}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-slate-700">Status</label>
-                <input
-                  className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
-                  value={form.status || ''}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
-                />
-              </div>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-slate-900">
+              {editing ? 'Edit officer' : 'Add officer'}
+            </h3>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field
+                label="Name"
+                value={form.name ?? ''}
+                onChange={(v) => setForm({ ...form, name: v })}
+                required
+              />
+              <Field
+                label="Designation"
+                value={form.designation ?? ''}
+                onChange={(v) => setForm({ ...form, designation: v })}
+              />
+              <Field
+                label="Zone"
+                value={form.zone ?? ''}
+                onChange={(v) => setForm({ ...form, zone: v })}
+              />
+              <Field
+                label="District"
+                value={form.district ?? ''}
+                onChange={(v) => setForm({ ...form, district: v })}
+              />
+              <Field
+                label="Email"
+                value={form.email ?? ''}
+                onChange={(v) => setForm({ ...form, email: v })}
+                type="email"
+              />
+              <Field
+                label="Phone"
+                value={form.phone ?? ''}
+                onChange={(v) => setForm({ ...form, phone: v })}
+              />
             </div>
-
-            <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setShowModal(false)} className="rounded-lg px-4 py-2 text-sm">Cancel</button>
-              <button onClick={handleCreate} disabled={saving} className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
-                {saving ? 'Saving…' : 'Create'}
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+              >
+                {saving ? 'Saving…' : 'Save'}
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
+  )
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  required,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  type?: string
+  required?: boolean
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-slate-700">
+        {label}
+        {required && <span className="text-rose-500"> *</span>}
+      </span>
+      <input
+        type={type}
+        value={value}
+        required={required}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+      />
+    </label>
   )
 }

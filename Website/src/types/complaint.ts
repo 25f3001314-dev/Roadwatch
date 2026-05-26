@@ -35,6 +35,8 @@ export interface Detection {
 export interface ComplaintStats {
   total: number
   pending: number
+  underReview: number
+  rejected: number
   assigned: number
   inProgress: number
   resolved: number
@@ -57,11 +59,16 @@ export interface ComplaintUpdatePayload {
 }
 
 export const DEPARTMENTS = [
-  'PWD',
-  'Municipal Corporation',
-  'Traffic Police',
-  'Electricity Dept',
-  'Water Dept',
+  'Roads Authority',
+  'Civic Maintenance',
+  'Street Lighting',
 ] as const
 
-export const STATUSES = ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'] as const
+export const STATUSES = [
+  'PENDING',
+  'UNDER_REVIEW',
+  'REJECTED',
+  'ASSIGNED',
+  'IN_PROGRESS',
+  'RESOLVED',
+] as const

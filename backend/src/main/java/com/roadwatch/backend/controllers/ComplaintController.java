@@ -4,6 +4,7 @@ import com.roadwatch.backend.dto.ComplaintStatsDto;
 import com.roadwatch.backend.dto.ComplaintUpdateRequest;
 import com.roadwatch.backend.models.Complaint;
 import com.roadwatch.backend.services.ComplaintService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,11 +31,22 @@ public class ComplaintController {
             @RequestParam(required = false) String severity,
             @RequestParam(required = false) String department,
             @RequestParam(required = false) String roadType,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false) Double radiusKm,
+            @RequestParam(required = false) Boolean emergency,
+            @RequestParam(required = false) Long roadId,
+            @RequestParam(required = false) Long authorityId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "timestamp") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir
     ) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "timestamp"));
-        return complaintService.findComplaints(status, severity, department, roadType, pageable);
+        Sort.Direction dir = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        PageRequest pageable = PageRequest.of(page, Math.min(size, 200), Sort.by(dir, sortBy));
+        return complaintService.findComplaints(status, severity, department, roadType,
+                q, lat, lng, radiusKm, emergency, roadId, authorityId, pageable);
     }
 
     @GetMapping("/map")
@@ -45,6 +57,16 @@ public class ComplaintController {
     @GetMapping("/stats")
     public ComplaintStatsDto stats() {
         return complaintService.getStats();
+    }
+
+    @GetMapping("/emergency")
+    public List<Complaint> emergencyCases() {
+        return complaintService.getEmergencyCases();
+    }
+
+    @GetMapping("/resolved")
+    public List<Complaint> resolvedComplaints() {
+        return complaintService.getResolvedComplaints();
     }
 
     @PostMapping("/reanalyze")
@@ -68,7 +90,7 @@ public class ComplaintController {
     @PatchMapping("/{id}")
     public ResponseEntity<Complaint> updateComplaint(
             @PathVariable Long id, 
-            @RequestBody ComplaintUpdateRequest request) {
+            @Valid @RequestBody ComplaintUpdateRequest request) {
         logger.debug("PATCH /api/complaints/{} received with payload: {}", id, request);
         try {
             Complaint updated = complaintService.updateComplaint(id, request);
@@ -78,5 +100,10 @@ public class ComplaintController {
             logger.error("Error updating complaint {}: {}", id, e.getMessage(), e);
             throw e;
         }
+    }
+
+    @GetMapping("/{id}/timeline")
+    public java.util.Map<String, Object> timeline(@PathVariable Long id) {
+        return complaintService.getTimeline(id);
     }
 }

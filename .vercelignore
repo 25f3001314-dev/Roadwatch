@@ -1,0 +1,27 @@
+# Backend & AI service — not deployed by Vercel
+backend/
+ai_service/
+docker-compose.yml
+
+# Local artifacts
+**/node_modules/
+**/dist/
+**/.next/
+**/target/
+**/__pycache__/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Sensitive
+**/.env
+**/.env.local
+**/.env.*.local
+
+# TS build info
+**/*.tsbuildinfo
+
+# Misc
+**/*.log

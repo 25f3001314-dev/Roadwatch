@@ -5,8 +5,6 @@ import com.roadwatch.backend.dto.DetectionResultDto;
 import com.roadwatch.backend.models.Complaint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,11 +19,9 @@ public class DecisionEngineService {
 
         if (aiResponse == null || !aiResponse.isSuccess()
                 || aiResponse.getDetections() == null || aiResponse.getDetections().isEmpty()) {
-            logger.debug("No AI detections available. Response: {}, aiResponse null: {}, success: {}, detections empty: {}",
-                    aiResponse, aiResponse == null,
-                    aiResponse != null && aiResponse.isSuccess(),
-                    aiResponse != null && (aiResponse.getDetections() == null || aiResponse.getDetections().isEmpty()));
-            logger.info("Using default values for complaint - aiLabel=none, aiConfidence=0.0 (no YOLO detections)");
+            logger.debug("No AI detections available. aiResponse null: {}, success: {}",
+                    aiResponse == null,
+                    aiResponse != null && aiResponse.isSuccess());
             complaint.setAiLabel("none");
             complaint.setAiConfidence(0.0);
             return;
@@ -74,6 +70,24 @@ public class DecisionEngineService {
             case "street_lighting":
                 complaint.setDepartment("Street Lighting");
                 complaint.setSeverity(isNationalHighway ? "HIGH" : "MEDIUM");
+                break;
+
+            // ─── Extended civic-tech labels ─────────────────────────────
+            case "waterlogging":
+                complaint.setDepartment("Drainage / Public Works");
+                // Waterlogging is always at least MEDIUM — drowning hazards / vehicle damage.
+                complaint.setSeverity(isNationalHighway || confidence > 0.7 ? "HIGH" : "MEDIUM");
+                break;
+
+            case "lane_damage":
+                complaint.setDepartment("Traffic Engineering");
+                complaint.setSeverity(isNationalHighway ? "HIGH" : "MEDIUM");
+                break;
+
+            case "debris":
+                complaint.setDepartment("Civic Maintenance");
+                // Debris on highways is an immediate accident risk.
+                complaint.setSeverity(isNationalHighway || confidence > 0.7 ? "HIGH" : "MEDIUM");
                 break;
 
             default:

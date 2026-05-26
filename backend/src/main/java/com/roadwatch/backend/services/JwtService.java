@@ -19,7 +19,18 @@ public class JwtService {
     public JwtService(
             @Value("${roadwatch.jwt.secret}") String secret,
             @Value("${roadwatch.jwt.expiration-ms}") long expirationMs) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length < 32) {
+            throw new IllegalStateException(
+                    "roadwatch.jwt.secret must be at least 32 bytes (got " + bytes.length + "). " +
+                    "Set the JWT_SECRET environment variable to a long random string.");
+        }
+        if (secret.contains("change-me") && !"true".equalsIgnoreCase(System.getenv("ROADWATCH_ALLOW_DEFAULT_SECRET"))) {
+            // Warn loudly but don't block dev usage.
+            org.slf4j.LoggerFactory.getLogger(JwtService.class)
+                    .warn("⚠ Using the default placeholder JWT secret. Set JWT_SECRET in production.");
+        }
+        this.key = Keys.hmacShaKeyFor(bytes);
         this.expirationMs = expirationMs;
     }
 

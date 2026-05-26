@@ -26,6 +26,17 @@ LABEL_MAP = {
     "other corruption": "surface_damage",
     "broken_divider": "broken_divider",
     "street_lighting": "street_lighting",
+    # Extended civic-tech labels (RoadWatch national governance)
+    "waterlogging": "waterlogging",
+    "water logging": "waterlogging",
+    "flooded": "waterlogging",
+    "lane_damage": "lane_damage",
+    "lane damage": "lane_damage",
+    "lane marking": "lane_damage",
+    "faded lane": "lane_damage",
+    "debris": "debris",
+    "obstruction": "debris",
+    "road obstruction": "debris",
 }
 
 _model = None
