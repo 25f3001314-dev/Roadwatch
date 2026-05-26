@@ -1,0 +1,82 @@
+[
+  {
+    "budgetId": "BUD-001",
+    "roadId": "NH-27-LKO-001",
+    "financialYear": "2025-26",
+    "sanctionedAmount": 85000000,
+    "spentAmount": 81000000,
+    "remainingAmount": 4000000,
+    "fundingSource": "Central Govt",
+    "flaggedForAudit": true
+  },
+  {
+    "budgetId": "BUD-002",
+    "roadId": "SH-49-CHN-002",
+    "financialYear": "2025-26",
+    "sanctionedAmount": 120000000,
+    "spentAmount": 65000000,
+    "remainingAmount": 55000000,
+    "fundingSource": "State Govt",
+    "flaggedForAudit": false
+  },
+  {
+    "budgetId": "BUD-003",
+    "roadId": "ORR-BLR-003",
+    "financialYear": "2025-26",
+    "sanctionedAmount": 250000000,
+    "spentAmount": 245000000,
+    "remainingAmount": 5000000,
+    "fundingSource": "Municipal Fund",
+    "flaggedForAudit": true
+  },
+  {
+    "budgetId": "BUD-004",
+    "roadId": "NH-48-PUN-004",
+    "financialYear": "2025-26",
+    "sanctionedAmount": 150000000,
+    "spentAmount": 100000000,
+    "remainingAmount": 50000000,
+    "fundingSource": "PPP Model",
+    "flaggedForAudit": false
+  },
+  {
+    "budgetId": "BUD-005",
+    "roadId": "SH-74-PAT-005",
+    "financialYear": "2025-26",
+    "sanctionedAmount": 60000000,
+    "spentAmount": 58000000,
+    "remainingAmount": 2000000,
+    "fundingSource": "State Govt",
+    "flaggedForAudit": true
+  },
+  {
+    "budgetId": "BUD-006",
+    "roadId": "NH-16-VIZ-006",
+    "financialYear": "2025-26",
+    "sanctionedAmount": 95000000,
+    "spentAmount": 42000000,
+    "remainingAmount": 53000000,
+    "fundingSource": "Central Govt",
+    "flaggedForAudit": false
+  },
+  {
+    "budgetId": "BUD-007",
+    "roadId": "NH-34-KOL-009",
+    "financialYear": "2025-26",
+    "sanctionedAmount": 180000000,
+    "spentAmount": 178000000,
+    "remainingAmount": 2000000,
+    "fundingSource": "Central Govt",
+    "flaggedForAudit": true
+  },
+  {
+    "budgetId": "BUD-008",
+    "roadId": "SH-10-AHD-008",
+    "financialYear": "2025-26",
+    "sanctionedAmount": 300000000,
+    "spentAmount": 120000000,
+    "remainingAmount": 180000000,
+    "fundingSource": "State Govt",
+    "flaggedForAudit": false
+  }
+]

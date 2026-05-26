@@ -1,0 +1,50 @@
+[
+  {
+    "roadId": "NH-27-LKO-001",
+    "totalComplaints": 142,
+    "highSeverity": 45,
+    "resolved": 89,
+    "pending": 53,
+    "averageResolutionDays": 14
+  },
+  {
+    "roadId": "ORR-BLR-003",
+    "totalComplaints": 410,
+    "highSeverity": 185,
+    "resolved": 110,
+    "pending": 300,
+    "averageResolutionDays": 42
+  },
+  {
+    "roadId": "SH-49-CHN-002",
+    "totalComplaints": 18,
+    "highSeverity": 2,
+    "resolved": 16,
+    "pending": 2,
+    "averageResolutionDays": 3
+  },
+  {
+    "roadId": "NH-34-KOL-009",
+    "totalComplaints": 275,
+    "highSeverity": 120,
+    "resolved": 90,
+    "pending": 185,
+    "averageResolutionDays": 38
+  },
+  {
+    "roadId": "SH-10-AHD-008",
+    "totalComplaints": 12,
+    "highSeverity": 0,
+    "resolved": 12,
+    "pending": 0,
+    "averageResolutionDays": 2
+  },
+  {
+    "roadId": "SH-12-LUD-014",
+    "totalComplaints": 198,
+    "highSeverity": 88,
+    "resolved": 60,
+    "pending": 138,
+    "averageResolutionDays": 29
+  }
+]

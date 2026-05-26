@@ -32,3 +32,35 @@ ai_service/__pycache__/
 
 # VS Code workspace files (must not live in source tree)
 *.code-workspace
+# Node
+node_modules/
+dist/
+
+# Java / Maven
+target/
+
+# Uploads
+uploads/
+backend/uploads/
+
+# Env
+.env
+.env.*
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Build
+build/
+.gradle/
+
+# Python
+__pycache__/
+*.pyc

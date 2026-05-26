@@ -1,0 +1,102 @@
+[
+  {
+    "repairId": "REP-1001",
+    "roadId": "NH-27-LKO-001",
+    "repairDate": "2025-07-12",
+    "issueType": "Pothole Patching",
+    "contractorId": "CTR-001",
+    "repairCost": 450000,
+    "status": "Completed",
+    "durabilityDays": 45
+  },
+  {
+    "repairId": "REP-1002",
+    "roadId": "NH-27-LKO-001",
+    "repairDate": "2025-09-18",
+    "issueType": "Surface Crack Seal",
+    "contractorId": "CTR-001",
+    "repairCost": 320000,
+    "status": "Completed",
+    "durabilityDays": 30
+  },
+  {
+    "repairId": "REP-1003",
+    "roadId": "ORR-BLR-003",
+    "repairDate": "2025-06-05",
+    "issueType": "Water Logging Fix",
+    "contractorId": "CTR-003",
+    "repairCost": 1250000,
+    "status": "Failed",
+    "durabilityDays": 12
+  },
+  {
+    "repairId": "REP-1004",
+    "roadId": "ORR-BLR-003",
+    "repairDate": "2025-08-22",
+    "issueType": "Major Resurfacing",
+    "contractorId": "CTR-003",
+    "repairCost": 4500000,
+    "status": "Completed",
+    "durabilityDays": 25
+  },
+  {
+    "repairId": "REP-1005",
+    "roadId": "SH-49-CHN-002",
+    "repairDate": "2025-11-10",
+    "issueType": "Shoulder Maintenance",
+    "contractorId": "CTR-002",
+    "repairCost": 180000,
+    "status": "Completed",
+    "durabilityDays": 210
+  },
+  {
+    "repairId": "REP-1006",
+    "roadId": "NH-34-KOL-009",
+    "repairDate": "2025-04-15",
+    "issueType": "Pothole Patching",
+    "contractorId": "CTR-003",
+    "repairCost": 600000,
+    "status": "Completed",
+    "durabilityDays": 18
+  },
+  {
+    "repairId": "REP-1007",
+    "roadId": "NH-34-KOL-009",
+    "repairDate": "2025-10-02",
+    "issueType": "Emergency Crater Fill",
+    "contractorId": "CTR-003",
+    "repairCost": 850000,
+    "status": "Completed",
+    "durabilityDays": 14
+  },
+  {
+    "repairId": "REP-1008",
+    "roadId": "NH-16-VIZ-006",
+    "repairDate": "2026-01-20",
+    "issueType": "Signage & Paint",
+    "contractorId": "CTR-005",
+    "repairCost": 220000,
+    "status": "Completed",
+    "durabilityDays": 300
+  },
+  {
+    "repairId": "REP-1009",
+    "roadId": "SH-12-LUD-014",
+    "repairDate": "2025-08-30",
+    "issueType": "Monsoon Damage Repair",
+    "contractorId": "CTR-003",
+    "repairCost": 1100000,
+    "status": "Failed",
+    "durabilityDays": 5
+  },
+  {
+    "repairId": "REP-1010",
+    "roadId": "SH-10-AHD-008",
+    "repairDate": "2025-12-15",
+    "issueType": "Routine Inspection Fix",
+    "contractorId": "CTR-006",
+    "repairCost": 95000,
+    "status": "Completed",
+    "durabilityDays": 180
+  }
+]

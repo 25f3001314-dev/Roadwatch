@@ -1,0 +1,30 @@
+[
+  {
+    "roadId": "NH-27-LKO-001",
+    "nextInspectionDate": "2026-06-15",
+    "plannedMaintenance": "Deep Patching & Leveling",
+    "estimatedBudget": 3500000,
+    "status": "Scheduled"
+  },
+  {
+    "roadId": "ORR-BLR-003",
+    "nextInspectionDate": "2026-06-01",
+    "plannedMaintenance": "Complete Base Reconstruction",
+    "estimatedBudget": 45000000,
+    "status": "Pending Approval"
+  },
+  {
+    "roadId": "SH-49-CHN-002",
+    "nextInspectionDate": "2026-11-20",
+    "plannedMaintenance": "Routine Shoulder Check",
+    "estimatedBudget": 500000,
+    "status": "Scheduled"
+  },
+  {
+    "roadId": "NH-34-KOL-009",
+    "nextInspectionDate": "2026-07-10",
+    "plannedMaintenance": "Emergency Monsoon Prep",
+    "estimatedBudget": 8000000,
+    "status": "High Priority"
+  }
+]

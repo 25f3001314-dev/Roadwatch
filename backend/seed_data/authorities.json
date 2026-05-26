@@ -1,0 +1,42 @@
+[
+  {
+    "authorityId": "AUTH-NHAI",
+    "name": "National Highway Authority of India",
+    "type": "Central Govt",
+    "state": "National",
+    "contactEmail": "grievance@nhai.gov.in",
+    "jurisdiction": ["NH"]
+  },
+  {
+    "authorityId": "AUTH-UP-PWD",
+    "name": "Uttar Pradesh PWD",
+    "type": "State PWD",
+    "state": "Uttar Pradesh",
+    "contactEmail": "pwd-up@gov.in",
+    "jurisdiction": ["SH", "MDR"]
+  },
+  {
+    "authorityId": "AUTH-BBMP",
+    "name": "Bruhat Bengaluru Mahanagara Palike",
+    "type": "Municipal Corp",
+    "state": "Karnataka",
+    "contactEmail": "commissioner@bbmp.gov.in",
+    "jurisdiction": ["City Road"]
+  },
+  {
+    "authorityId": "AUTH-WB-NHAI",
+    "name": "NHAI Bengal Zone",
+    "type": "Central Govt",
+    "state": "West Bengal",
+    "contactEmail": "bengal-ops@nhai.gov.in",
+    "jurisdiction": ["NH"]
+  },
+  {
+    "authorityId": "AUTH-GUJ-RB",
+    "name": "Gujarat Roads & Buildings Dept",
+    "type": "State R&B",
+    "state": "Gujarat",
+    "contactEmail": "rbd-guj@gujarat.gov.in",
+    "jurisdiction": ["SH", "MDR"]
+  }
+]

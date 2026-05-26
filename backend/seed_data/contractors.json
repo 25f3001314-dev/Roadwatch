@@ -1,0 +1,82 @@
+[
+  {
+    "contractorId": "CTR-001",
+    "name": "ABC Infra Pvt Ltd",
+    "headquarters": "Lucknow",
+    "projectsCompleted": 42,
+    "repeatFailures": 14,
+    "rating": 2.1,
+    "authority": "NHAI",
+    "blacklisted": true
+  },
+  {
+    "contractorId": "CTR-002",
+    "name": "Southern Metro Buildcon",
+    "headquarters": "Chennai",
+    "projectsCompleted": 85,
+    "repeatFailures": 2,
+    "rating": 4.6,
+    "authority": "State PWD",
+    "blacklisted": false
+  },
+  {
+    "contractorId": "CTR-003",
+    "name": "Nexus Roadways Corp",
+    "headquarters": "Kolkata",
+    "projectsCompleted": 28,
+    "repeatFailures": 19,
+    "rating": 1.8,
+    "authority": "BBMP",
+    "blacklisted": true
+  },
+  {
+    "contractorId": "CTR-004",
+    "name": "Vindhya Constructions",
+    "headquarters": "Bhopal",
+    "projectsCompleted": 56,
+    "repeatFailures": 7,
+    "rating": 3.4,
+    "authority": "Municipal Corp",
+    "blacklisted": false
+  },
+  {
+    "contractorId": "CTR-005",
+    "name": "Coastal Projects Ltd",
+    "headquarters": "Visakhapatnam",
+    "projectsCompleted": 112,
+    "repeatFailures": 4,
+    "rating": 4.3,
+    "authority": "NHAI",
+    "blacklisted": false
+  },
+  {
+    "contractorId": "CTR-006",
+    "name": "Gujarat Highway Corp",
+    "headquarters": "Ahmedabad",
+    "projectsCompleted": 90,
+    "repeatFailures": 1,
+    "rating": 4.8,
+    "authority": "State R&B",
+    "blacklisted": false
+  },
+  {
+    "contractorId": "CTR-007",
+    "name": "Malabar Builders",
+    "headquarters": "Kochi",
+    "projectsCompleted": 45,
+    "repeatFailures": 3,
+    "rating": 4.1,
+    "authority": "NHAI",
+    "blacklisted": false
+  },
+  {
+    "contractorId": "CTR-008",
+    "name": "Brahmaputra Infra",
+    "headquarters": "Guwahati",
+    "projectsCompleted": 34,
+    "repeatFailures": 8,
+    "rating": 2.9,
+    "authority": "NHAI",
+    "blacklisted": false
+  }
+]
