@@ -65,3 +65,4 @@ build/
 __pycache__/
 *.pyc
 .venv/
+FETCH_HEAD
