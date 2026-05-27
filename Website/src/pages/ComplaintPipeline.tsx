@@ -15,13 +15,13 @@ import {
 } from '@/utils/complaintActions';
 
 const ACTION_LABEL: Record<ComplaintAction, string> = {
-  approve: 'Approve',
+  accept: 'Approve',
   reject: 'Reject',
   resolve: 'Mark Resolved',
 };
 
 const ACTION_BUTTON_CLASS: Record<ComplaintAction, string> = {
-  approve: 'bg-emerald-600 hover:bg-emerald-700',
+  accept: 'bg-emerald-600 hover:bg-emerald-700',
   reject: 'bg-rose-600 hover:bg-rose-700',
   resolve: 'bg-blue-600 hover:bg-blue-700',
 };
@@ -87,7 +87,7 @@ const ComplaintCard = ({ complaint, onUpdate }: { complaint: Complaint, onUpdate
       />
 
       <div className="flex flex-wrap gap-2 pt-1">
-        {(['approve', 'reject', 'resolve'] as ComplaintAction[]).map((action) => {
+        {(['accept', 'reject', 'resolve'] as ComplaintAction[]).map((action) => {
           const allowed = canPerformAction(action, complaint.status);
           if (!allowed) return null;
           return (
