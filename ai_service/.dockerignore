@@ -1,8 +1,28 @@
+# RoadWatch AI service .dockerignore
+#
+# IMPORTANT: do NOT add `*.pt` or `model/` here.
+# The trained weights at model/rrd_baseline/weights/best.pt MUST be copied
+# into the image. The build-time validation in Dockerfile depends on it.
+
+# Python
 **/__pycache__
 **/*.pyc
+
+# VCS
 .git
+
+# YOLO training artifacts (large, never used at inference time)
 **/train_batch*.jpg
 **/val_batch*.jpg
 **/labels.jpg
 **/results.png
+**/results.csv
 **/confusion_matrix*.png
+**/Box*_curve.png
+**/args.yaml
+
+# Legacy / generic weights — explicitly excluded so they can never be
+# picked up as a silent fallback by ultralytics.
+model/yolov8m.pt
+model/yolo11n.pt
+model/rrd_baseline/rdd_baseline/run1/weights/last.pt

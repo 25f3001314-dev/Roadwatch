@@ -25,7 +25,7 @@ services:
       dockerfile: Dockerfile
     container_name: roadwatch_ai_service
     environment:
-      - MODEL_PATH=model/rrd_baseline/rdd_baseline/run1/weights/best.pt
+      - MODEL_PATH=model/rrd_baseline/weights/best.pt
       - AI_CONF_THRESHOLD=0.25
     ports:
       - "8000:8000"

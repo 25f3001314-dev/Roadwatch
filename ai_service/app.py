@@ -1,20 +1,38 @@
-import os
 import logging
+import os
+import sys
 from typing import List, Optional
 
 from fastapi import FastAPI, File, UploadFile
 from pydantic import BaseModel
 
-logger = logging.getLogger(__name__)
+# ---------------------------------------------------------------------------
+# Logging — configured up-front so startup logs are guaranteed to surface in
+# uvicorn / Docker / HuggingFace Space stdout. Uses the same format uvicorn
+# itself uses so output stays consistent.
+# ---------------------------------------------------------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    stream=sys.stdout,
+    force=True,
+)
+logger = logging.getLogger("roadwatch.ai")
 
 app = FastAPI(title="RoadWatch AI Microservice")
 
-# Trained RDD weights (YOLOv8m on RDD2022)
+# ---------------------------------------------------------------------------
+# Model path — single source of truth.
+#
+# The trained RDD2022 YOLOv8m weights MUST be packaged into the image at
+# this path. There is intentionally NO fallback to a generic yolov8m.pt /
+# yolo11n.pt — if the trained file is missing, the service must fail loudly
+# at startup so the deployment is never silently serving generic detections.
+# ---------------------------------------------------------------------------
 DEFAULT_MODEL_PATH = os.environ.get(
     "MODEL_PATH",
-    "model/rrd_baseline/rdd_baseline/run1/weights/best.pt",
+    "model/rrd_baseline/weights/best.pt",
 )
-FALLBACK_MODEL_PATH = os.environ.get("FALLBACK_MODEL_PATH", "model/yolov8m.pt")
 CONF_THRESHOLD = float(os.environ.get("AI_CONF_THRESHOLD", "0.25"))
 
 # Map dataset class names -> backend DecisionEngine labels
@@ -40,27 +58,50 @@ LABEL_MAP = {
 }
 
 _model = None
+_loaded_model_path: Optional[str] = None
+_loaded_model_classes: dict = {}
 
 
 def _resolve_model_path() -> str:
-    candidates = [DEFAULT_MODEL_PATH, FALLBACK_MODEL_PATH, "model/best.pt"]
-    for path in candidates:
-        if path and os.path.isfile(path):
-            return path
-    raise FileNotFoundError(
-        f"No YOLO weights found. Tried: {candidates}. "
-        "Place best.pt under ai_service/model/ or set MODEL_PATH."
-    )
+    """Return the absolute path to the trained weights, or raise.
+
+    No fallback. No auto-download. If the file is not present, the deployment
+    is broken and must fail fast.
+    """
+    if not DEFAULT_MODEL_PATH:
+        raise FileNotFoundError(
+            "MODEL_PATH is empty. Set it to the trained road-damage weights file."
+        )
+
+    abs_path = os.path.abspath(DEFAULT_MODEL_PATH)
+    if not os.path.isfile(abs_path):
+        raise FileNotFoundError(
+            f"Trained YOLO weights not found at '{abs_path}'. "
+            "The road-damage best.pt must be baked into the image at "
+            "model/rrd_baseline/weights/best.pt. Refusing to start to avoid "
+            "silent fallback to a generic model."
+        )
+    return abs_path
 
 
 def get_model():
-    global _model
+    global _model, _loaded_model_path, _loaded_model_classes
     if _model is None:
         from ultralytics import YOLO
 
         path = _resolve_model_path()
-        logger.info("Loading YOLO model from %s", path)
+        size_mb = os.path.getsize(path) / (1024 * 1024)
+        logger.info("Loading YOLO model")
+        logger.info("  model_path = %s", path)
+        logger.info("  model_size = %.2f MB", size_mb)
+
         _model = YOLO(path)
+        _loaded_model_path = path
+        _loaded_model_classes = dict(getattr(_model, "names", {}) or {})
+
+        logger.info("Model loaded successfully")
+        logger.info("  num_classes = %d", len(_loaded_model_classes))
+        logger.info("  class_names = %s", _loaded_model_classes)
     return _model
 
 
@@ -152,11 +193,20 @@ async def _read_upload(image: UploadFile) -> bytes:
 
 @app.on_event("startup")
 async def startup():
+    logger.info("=" * 60)
+    logger.info("RoadWatch AI service starting")
+    logger.info("  configured MODEL_PATH = %s", DEFAULT_MODEL_PATH)
+    logger.info("  conf_threshold        = %s", CONF_THRESHOLD)
+    logger.info("=" * 60)
     try:
         get_model()
-        logger.info("YOLO model ready")
-    except Exception as e:
-        logger.error("Model load failed at startup: %s", e)
+        logger.info("YOLO model ready — service is serving trained RDD weights.")
+    except Exception:
+        logger.exception(
+            "FATAL: model load failed at startup. "
+            "Refusing to serve traffic with a missing/invalid model."
+        )
+        raise
 
 
 @app.post("/analyze", response_model=AnalysisResponse)
@@ -181,16 +231,15 @@ async def analyze_infrastructure(image: UploadFile = File(...)):
 
 @app.get("/health")
 def health_check():
-    model_ok = False
-    model_path = None
+    model_path = _loaded_model_path or DEFAULT_MODEL_PATH
     try:
-        model_path = _resolve_model_path()
-        model_ok = os.path.isfile(model_path)
-    except FileNotFoundError:
-        pass
+        model_exists = os.path.isfile(model_path)
+    except (TypeError, ValueError):
+        model_exists = False
     return {
         "status": "healthy",
         "model_loaded": _model is not None,
         "model_path": model_path,
-        "model_exists": model_ok,
+        "model_exists": model_exists,
+        "class_names": _loaded_model_classes,
     }
