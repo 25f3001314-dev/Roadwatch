@@ -8,7 +8,7 @@
   "trailingSlash": false,
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/((?!assets/|favicon\\.svg|robots\\.txt).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|geo/|.*\\\\.json|favicon\\\\.svg|robots\\\\.txt).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
