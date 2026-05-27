@@ -106,4 +106,22 @@ public class ComplaintController {
     public java.util.Map<String, Object> timeline(@PathVariable Long id) {
         return complaintService.getTimeline(id);
     }
+
+    @PostMapping("/{id}/forward")
+    public ResponseEntity<Complaint> forwardToDepartment(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> body) {
+        String department = body.get("department");
+        String reason = body.get("reason");
+        Complaint forwarded = complaintService.forwardToDepartment(id, department, reason);
+        return ResponseEntity.ok(forwarded);
+    }
+
+    @PostMapping("/{id}/resolution-proof")
+    public ResponseEntity<Complaint> uploadResolutionProof(
+            @PathVariable Long id,
+            @RequestParam("image") MultipartFile image) {
+        Complaint updated = complaintService.uploadResolutionProof(id, image);
+        return ResponseEntity.ok(updated);
+    }
 }

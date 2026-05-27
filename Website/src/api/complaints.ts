@@ -53,3 +53,23 @@ export async function updateComplaint(
   const { data } = await api.patch<Complaint>(`${API_ROUTES.complaints}/${id}`, payload)
   return data
 }
+
+export async function forwardComplaint(
+  id: number,
+  department: string,
+  reason?: string
+): Promise<Complaint> {
+  const { data } = await api.post<Complaint>(`${API_ROUTES.complaints}/${id}/forward`, {
+    department,
+    reason,
+  })
+  return data
+}
+
+export async function fetchTimeline(id: number): Promise<{
+  complaint: Complaint
+  events: import('@/types/complaint').TimelineEvent[]
+}> {
+  const { data } = await api.get(`${API_ROUTES.complaints}/${id}/timeline`)
+  return data
+}

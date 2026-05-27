@@ -1,4 +1,5 @@
-import { DEPARTMENTS, STATUSES } from '@/types/complaint'
+import { STATUSES } from '@/types/complaint'
+import { DEPARTMENTS } from '@/data/departments'
 import type { ComplaintListFilters } from '@/hooks/useComplaints'
 
 interface ComplaintFiltersProps {
@@ -45,8 +46,8 @@ export function ComplaintFilters({ filters, onChange, onClear }: ComplaintFilter
       >
         <option value="">All departments</option>
         {DEPARTMENTS.map((d) => (
-          <option key={d} value={d}>
-            {d}
+          <option key={d.id} value={d.id}>
+            {d.name}
           </option>
         ))}
       </select>

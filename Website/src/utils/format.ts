@@ -36,12 +36,16 @@ export function statusClass(status: string): string {
   switch (status?.toUpperCase()) {
     case 'PENDING':
       return 'border-amber-200 bg-amber-50 text-amber-700'
+    case 'UNDER_REVIEW':
+      return 'border-blue-200 bg-blue-50 text-blue-700'
     case 'ASSIGNED':
-      return 'border-sky-200 bg-sky-50 text-sky-700'
+      return 'border-purple-200 bg-purple-50 text-purple-700'
     case 'IN_PROGRESS':
-      return 'border-violet-200 bg-violet-50 text-violet-700'
+      return 'border-orange-200 bg-orange-50 text-orange-700'
     case 'RESOLVED':
       return 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    case 'REJECTED':
+      return 'border-rose-200 bg-rose-50 text-rose-700'
     default:
       return 'border-slate-200 bg-slate-50 text-slate-700'
   }

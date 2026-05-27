@@ -7,6 +7,24 @@ import { DEPARTMENTS } from '@/data/departments';
 import { Badge } from '@/components/ui/Badge';
 import { updateComplaint } from '@/api/complaints';
 import { useState } from 'react';
+import {
+  ACTION_TO_STATUS,
+  actionDisabledReason,
+  canPerformAction,
+  type ComplaintAction,
+} from '@/utils/complaintActions';
+
+const ACTION_LABEL: Record<ComplaintAction, string> = {
+  approve: 'Approve',
+  reject: 'Reject',
+  resolve: 'Mark Resolved',
+};
+
+const ACTION_BUTTON_CLASS: Record<ComplaintAction, string> = {
+  approve: 'bg-emerald-600 hover:bg-emerald-700',
+  reject: 'bg-rose-600 hover:bg-rose-700',
+  resolve: 'bg-blue-600 hover:bg-blue-700',
+};
 
 const getSuggestedDepartment = (roadType?: string | null) => {
   if (!roadType) return null;
@@ -17,14 +35,19 @@ const ComplaintCard = ({ complaint, onUpdate }: { complaint: Complaint, onUpdate
   const suggestedDept = getSuggestedDepartment(complaint.roadType);
   const [notes, setNotes] = useState('');
 
-  const handleAction = (status: string, department?: string) => {
-    const payload: any = { status };
-    if (department) {
-      payload.department = department;
-    }
-    if (notes) {
-      payload.adminNotes = notes;
-    }
+  const handleAction = (action: ComplaintAction) => {
+    const payload: Record<string, string> = { status: ACTION_TO_STATUS[action] };
+    if (notes) payload.adminNotes = notes;
+    onUpdate(complaint.id, payload);
+  };
+
+  const handleForward = () => {
+    if (!suggestedDept) return;
+    const payload: Record<string, string> = {
+      status: 'ASSIGNED',
+      department: suggestedDept.name,
+    };
+    if (notes) payload.adminNotes = notes;
     onUpdate(complaint.id, payload);
   };
 
@@ -42,39 +65,54 @@ const ComplaintCard = ({ complaint, onUpdate }: { complaint: Complaint, onUpdate
             <Badge variant="status" value={complaint.status} />
         </div>
       </div>
-      
-      <div className="flex items-center gap-2 text-sm">
-        <span className={complaint.status === 'PENDING' ? 'font-bold text-brand-600' : 'text-slate-500'}>PENDING</span>
-        <span>→</span>
-        <span className={complaint.status === 'UNDER_REVIEW' ? 'font-bold text-brand-600' : 'text-slate-500'}>UNDER REVIEW</span>
-        <span>→</span>
-        <span className={complaint.status === 'ASSIGNED' ? 'font-bold text-brand-600' : 'text-slate-500'}>ASSIGNED</span>
-        <span>→</span>
-        <span className={complaint.status === 'RESOLVED' ? 'font-bold text-green-600' : 'text-slate-500'}>RESOLVED</span>
+
+      <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.16em]">
+        <span className={complaint.status === 'PENDING' ? 'font-bold text-amber-600' : 'text-slate-400'}>Pending</span>
+        <span className="text-slate-300">→</span>
+        <span className={complaint.status === 'UNDER_REVIEW' ? 'font-bold text-blue-600' : 'text-slate-400'}>Under review</span>
+        <span className="text-slate-300">→</span>
+        <span className={complaint.status === 'ASSIGNED' ? 'font-bold text-purple-600' : 'text-slate-400'}>Assigned</span>
+        <span className="text-slate-300">→</span>
+        <span className={complaint.status === 'IN_PROGRESS' ? 'font-bold text-orange-600' : 'text-slate-400'}>In progress</span>
+        <span className="text-slate-300">→</span>
+        <span className={complaint.status === 'RESOLVED' ? 'font-bold text-emerald-600' : 'text-slate-400'}>Resolved</span>
       </div>
 
-      {complaint.status === 'PENDING' && (
-        <div className="flex gap-2 pt-2">
-          <button onClick={() => handleAction('UNDER_REVIEW')} className="bg-green-500 text-white px-3 py-1 rounded-md text-sm">Approve</button>
-          <button onClick={() => handleAction('REJECTED')} className="bg-red-500 text-white px-3 py-1 rounded-md text-sm">Reject</button>
-        </div>
-      )}
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Optional notes for this action…"
+        rows={2}
+        className="w-full border border-slate-300 rounded-md p-2 text-sm"
+      />
 
-      {complaint.status === 'UNDER_REVIEW' && suggestedDept && (
-        <div className="pt-2 space-y-2">
-            <textarea 
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add notes..."
-                className="w-full border border-slate-300 rounded-md p-2 text-sm"
-            />
-            <div className="flex gap-2">
-                <button onClick={() => handleAction('ASSIGNED', suggestedDept.name)} className="bg-brand-600 text-white px-3 py-1 rounded-md text-sm">
-                    Forward to {suggestedDept.name}
-                </button>
-            </div>
-        </div>
-      )}
+      <div className="flex flex-wrap gap-2 pt-1">
+        {(['approve', 'reject', 'resolve'] as ComplaintAction[]).map((action) => {
+          const allowed = canPerformAction(action, complaint.status);
+          if (!allowed) return null;
+          return (
+            <button
+              key={action}
+              type="button"
+              onClick={() => handleAction(action)}
+              title={actionDisabledReason(action, complaint.status) ?? undefined}
+              className={`text-white px-3 py-1.5 rounded-md text-sm font-medium ${ACTION_BUTTON_CLASS[action]}`}
+            >
+              {ACTION_LABEL[action]}
+            </button>
+          );
+        })}
+
+        {complaint.status === 'UNDER_REVIEW' && suggestedDept && (
+          <button
+            type="button"
+            onClick={handleForward}
+            className="bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-md text-sm font-medium"
+          >
+            Forward to {suggestedDept.name}
+          </button>
+        )}
+      </div>
     </div>
   );
 };
@@ -94,17 +132,31 @@ export default function ComplaintPipeline() {
   if (loading) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={reload} />;
 
+  // Pipeline page is meant for in-flight work. Hide terminal complaints
+  // (RESOLVED / REJECTED) here so the surface stays focused on actionable
+  // items. Resolved complaints still have their dedicated page.
+  const inFlight = complaints.filter((c) => {
+    const s = (c.status || '').toUpperCase();
+    return s !== 'RESOLVED' && s !== 'REJECTED';
+  });
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Assigned / Forwarded Complaints"
         subtitle="Review complaints assigned to departments and monitor ongoing actions."
       />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {complaints.map(complaint => (
-          <ComplaintCard key={complaint.id} complaint={complaint} onUpdate={handleUpdate} />
-        ))}
-      </div>
+      {inFlight.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-slate-200 bg-white px-6 py-12 text-center text-slate-500">
+          No in-flight complaints — all complaints are resolved or rejected.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {inFlight.map(complaint => (
+            <ComplaintCard key={complaint.id} complaint={complaint} onUpdate={handleUpdate} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

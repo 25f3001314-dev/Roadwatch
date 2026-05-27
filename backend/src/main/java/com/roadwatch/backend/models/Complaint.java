@@ -92,6 +92,18 @@ public class Complaint {
     /** Optional citizen-supplied contact (preserved from current API; nullable). */
     private String reporterContact;
 
+    // ─── Civic workflow fields ─────────────────────────────────────────
+
+    /** Department's response text (work started, team assigned, etc.). */
+    @Column(columnDefinition = "TEXT")
+    private String departmentResponse;
+
+    /** When the department last responded. */
+    private LocalDateTime departmentResponseDate;
+
+    /** URL of the resolution proof image (before/after repair). */
+    private String resolutionProofUrl;
+
     public Complaint() {}
 
     public Long getId() { return id; }
@@ -141,4 +153,11 @@ public class Complaint {
     public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
     public String getReporterContact() { return reporterContact; }
     public void setReporterContact(String reporterContact) { this.reporterContact = reporterContact; }
+
+    public String getDepartmentResponse() { return departmentResponse; }
+    public void setDepartmentResponse(String departmentResponse) { this.departmentResponse = departmentResponse; }
+    public LocalDateTime getDepartmentResponseDate() { return departmentResponseDate; }
+    public void setDepartmentResponseDate(LocalDateTime departmentResponseDate) { this.departmentResponseDate = departmentResponseDate; }
+    public String getResolutionProofUrl() { return resolutionProofUrl; }
+    public void setResolutionProofUrl(String resolutionProofUrl) { this.resolutionProofUrl = resolutionProofUrl; }
 }

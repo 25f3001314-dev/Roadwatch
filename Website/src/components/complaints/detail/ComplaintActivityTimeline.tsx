@@ -1,4 +1,5 @@
 import { formatDate, formatPercent } from '@/utils/format'
+import type { TimelineEvent } from '@/types/complaint'
 
 interface TimelineEntry {
   title: string
@@ -52,6 +53,46 @@ export function ComplaintActivityTimeline({ entries, emptyTitle, emptyDescriptio
   )
 }
 
+/** Map an action string to a display-friendly tone */
+function actionToTone(action: string): TimelineEntry['tone'] {
+  const a = action.toUpperCase()
+  if (a.includes('ACCEPTED') || a.includes('RESOLVED')) return 'emerald'
+  if (a.includes('FORWARDED') || a.includes('ASSIGNED')) return 'amber'
+  if (a.includes('REJECTED')) return 'rose'
+  if (a.includes('STATUS_')) return 'brand'
+  return 'slate'
+}
+
+/** Map an action string to a human-readable title */
+function actionToTitle(action: string): string {
+  const a = action.toUpperCase()
+  if (a === 'FORWARDED') return 'Forwarded to department'
+  if (a === 'STATUS_ACCEPTED') return 'Complaint accepted'
+  if (a === 'STATUS_REJECTED') return 'Complaint rejected'
+  if (a === 'STATUS_FORWARDED') return 'Forwarded to department'
+  if (a === 'STATUS_IN_PROGRESS') return 'Work in progress'
+  if (a === 'STATUS_RESOLVED') return 'Complaint resolved'
+  if (a.startsWith('STATUS_')) return `Status → ${a.replace('STATUS_', '').replace(/_/g, ' ').toLowerCase()}`
+  if (a === 'AUTO_ASSIGNED') return 'Auto-assigned by system'
+  if (a === 'MANUALLY_REASSIGNED') return 'Manually reassigned'
+  if (a === 'ESCALATED') return 'Escalated'
+  return action.replace(/_/g, ' ')
+}
+
+/** Convert real API timeline events to display entries */
+export function buildTimelineFromEvents(events: TimelineEvent[]): TimelineEntry[] {
+  return events.map((event) => ({
+    title: actionToTitle(event.action),
+    meta: formatDate(event.occurredAt),
+    description: [
+      event.department ? `Dept: ${event.department}` : '',
+      event.performedBy ? `By: ${event.performedBy}` : '',
+      event.reason || '',
+    ].filter(Boolean).join(' · ') || 'No additional details',
+    tone: actionToTone(event.action),
+  }))
+}
+
 export function buildLiveComplaintTimeline(args: {
   timestamp: string
   status: string
@@ -64,27 +105,27 @@ export function buildLiveComplaintTimeline(args: {
     {
       title: 'Complaint submitted',
       meta: formatDate(args.timestamp),
-      description: 'Citizen report captured in the live complaint feed.',
+      description: 'Citizen report captured.',
       tone: 'brand',
     },
     {
-      title: 'AI triage snapshot',
-      meta: args.aiConfidence != null ? formatPercent(args.aiConfidence) : 'Live snapshot',
-      description: `Primary label: ${args.aiLabel || 'Unclassified'}${args.aiConfidence != null ? ` · Confidence ${formatPercent(args.aiConfidence)}` : ''}.`,
+      title: 'AI analysis',
+      meta: args.aiConfidence != null ? formatPercent(args.aiConfidence) : 'Processed',
+      description: `Label: ${args.aiLabel || 'Unclassified'}${args.aiConfidence != null ? ` · ${formatPercent(args.aiConfidence)} confidence` : ''}.`,
       tone: 'emerald',
     },
     {
-      title: 'Routing and ownership',
+      title: 'Current status',
       meta: args.department || 'Unassigned',
-      description: `Current workflow status is ${args.status.toLowerCase().replace(/_/g, ' ')}.`,
+      description: `Status: ${args.status.toLowerCase().replace(/_/g, ' ')}.`,
       tone: 'amber',
     },
   ]
 
   if (args.adminNotes?.trim()) {
     entries.push({
-      title: 'Admin note recorded',
-      meta: 'Workspace note',
+      title: 'Admin note',
+      meta: 'Note',
       description: args.adminNotes.trim(),
       tone: 'rose',
     })

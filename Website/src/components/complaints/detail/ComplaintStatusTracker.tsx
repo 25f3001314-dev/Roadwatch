@@ -1,25 +1,77 @@
-import { CheckCircle2, Circle, Clock3 } from 'lucide-react'
+import { CheckCircle2, Circle, Clock3, XCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
-import { STATUSES } from '@/types/complaint'
 
 interface ComplaintStatusTrackerProps {
   status: string
 }
 
+/**
+ * Civic workflow lifecycle steps.
+ * REJECTED is a branch outcome, not a linear step.
+ */
+const LIFECYCLE_STEPS = [
+  'PENDING',
+  'ACCEPTED',
+  'FORWARDED',
+  'IN_PROGRESS',
+  'RESOLVED',
+] as const
+
 const STATUS_COPY: Record<string, { title: string; description: string }> = {
-  PENDING: { title: 'Queued', description: 'Awaiting assignment and first action.' },
-  ASSIGNED: { title: 'Assigned', description: 'Routing selected and ownership confirmed.' },
-  IN_PROGRESS: { title: 'In progress', description: 'Field or office teams are actively handling it.' },
-  RESOLVED: { title: 'Resolved', description: 'Case closed in the current live snapshot.' },
+  PENDING: {
+    title: 'Submitted',
+    description: 'Citizen report received; awaiting admin verification.',
+  },
+  ACCEPTED: {
+    title: 'Accepted',
+    description: 'Admin verified complaint as legitimate.',
+  },
+  FORWARDED: {
+    title: 'Forwarded',
+    description: 'Routed to the responsible government department.',
+  },
+  IN_PROGRESS: {
+    title: 'In progress',
+    description: 'Department is actively working on the issue.',
+  },
+  RESOLVED: {
+    title: 'Resolved',
+    description: 'Issue fixed and closure confirmed.',
+  },
+  REJECTED: {
+    title: 'Rejected',
+    description: 'Complaint was rejected during verification.',
+  },
 }
 
 export function ComplaintStatusTracker({ status }: ComplaintStatusTrackerProps) {
-  const currentIndex = STATUSES.indexOf(status as (typeof STATUSES)[number])
+  const upper = (status || '').toUpperCase()
+  const isRejected = upper === 'REJECTED'
+
+  if (isRejected) {
+    const copy = STATUS_COPY.REJECTED
+    return (
+      <div className="space-y-3">
+        <div className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
+          <XCircle size={20} className="mt-0.5 text-rose-600" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-semibold text-rose-700">{copy.title}</p>
+              <Badge variant="status" value="REJECTED" />
+            </div>
+            <p className="mt-1 text-sm leading-6 text-rose-600/90">{copy.description}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const currentIndex = LIFECYCLE_STEPS.indexOf(upper as (typeof LIFECYCLE_STEPS)[number])
 
   return (
     <div className="space-y-3">
-      {STATUSES.map((step, index) => {
-        const isCurrent = step === status
+      {LIFECYCLE_STEPS.map((step, index) => {
+        const isCurrent = step === upper
         const isComplete = currentIndex > index
         const copy = STATUS_COPY[step]
 
@@ -37,12 +89,14 @@ export function ComplaintStatusTracker({ status }: ComplaintStatusTrackerProps) 
               >
                 {isCurrent ? <Clock3 size={15} /> : isComplete ? <CheckCircle2 size={15} /> : <Circle size={15} />}
               </div>
-              {index < STATUSES.length - 1 && <div className="mt-2 h-full w-px flex-1 bg-slate-200" />}
+              {index < LIFECYCLE_STEPS.length - 1 && <div className="mt-2 h-full w-px flex-1 bg-slate-200" />}
             </div>
 
             <div className="min-w-0 flex-1 pb-4">
               <div className="flex flex-wrap items-center gap-2">
-                <p className={`text-sm font-semibold ${isCurrent ? 'text-slate-950' : 'text-slate-700'}`}>{copy.title}</p>
+                <p className={`text-sm font-semibold ${isCurrent ? 'text-slate-950' : 'text-slate-700'}`}>
+                  {copy.title}
+                </p>
                 <Badge variant="status" value={step} />
               </div>
               <p className="mt-1 text-sm leading-6 text-slate-500">{copy.description}</p>

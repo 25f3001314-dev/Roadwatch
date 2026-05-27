@@ -5,6 +5,7 @@ import com.roadwatch.backend.dto.AiAnalysisResponseDto;
 import com.roadwatch.backend.dto.ComplaintStatsDto;
 import com.roadwatch.backend.dto.ComplaintUpdateRequest;
 import com.roadwatch.backend.models.Complaint;
+import com.roadwatch.backend.models.ComplaintAssignmentHistory;
 import com.roadwatch.backend.repositories.ComplaintRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,7 @@ public class ComplaintService {
     private static final Logger logger = LoggerFactory.getLogger(ComplaintService.class);
 
     private static final Set<String> VALID_STATUSES = Set.of(
-            "PENDING", "UNDER_REVIEW", "REJECTED", "ASSIGNED", "IN_PROGRESS", "RESOLVED"
+            "PENDING", "ACCEPTED", "UNDER_REVIEW", "REJECTED", "FORWARDED", "ASSIGNED", "IN_PROGRESS", "RESOLVED"
     );
 
     private static final Set<String> VALID_SEVERITIES = Set.of("HIGH", "MEDIUM", "LOW");
@@ -200,6 +201,9 @@ public class ComplaintService {
         logger.debug("Updating complaint {} with request: {}", id, request);
         Complaint complaint = getById(id);
 
+        String previousStatus = complaint.getStatus();
+        String newStatus = null;
+
         // Only update status if provided and not blank
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
             String status = request.getStatus().trim().toUpperCase();
@@ -211,13 +215,13 @@ public class ComplaintService {
                         "Invalid status. Allowed: " + VALID_STATUSES
                 );
             }
-            String previous = complaint.getStatus();
             complaint.setStatus(status);
             if ("RESOLVED".equalsIgnoreCase(status) && complaint.getResolvedAt() == null) {
                 complaint.setResolvedAt(LocalDateTime.now());
             }
-            if (!status.equalsIgnoreCase(previous)) {
-                logger.info("Complaint {} status: {} -> {}", id, previous, status);
+            if (!status.equalsIgnoreCase(previousStatus)) {
+                newStatus = status;
+                logger.info("Complaint {} status: {} -> {}", id, previousStatus, status);
             }
         }
 
@@ -245,22 +249,82 @@ public class ComplaintService {
             complaint.setAdminNotes(request.getAdminNotes());
         }
 
+        // Update department response
+        if (request.getDepartmentResponse() != null) {
+            complaint.setDepartmentResponse(request.getDepartmentResponse());
+            complaint.setDepartmentResponseDate(LocalDateTime.now());
+        }
+
+        // Update resolution proof URL
+        if (request.getResolutionProofUrl() != null) {
+            complaint.setResolutionProofUrl(request.getResolutionProofUrl());
+        }
+
+        Complaint saved = complaintRepository.save(complaint);
+
+        // Audit trail: record any admin-driven status transition. Non-fatal —
+        // a logging failure must never break the PATCH. Reuses the existing
+        // complaint_assignment_history table; no new table introduced.
+        if (newStatus != null && historyRepository != null) {
+            try {
+                ComplaintAssignmentHistory event = new ComplaintAssignmentHistory();
+                event.setComplaintId(id);
+                event.setAssignedAuthorityId(saved.getAssignedAuthorityId());
+                event.setDepartment(saved.getDepartment());
+                event.setAction("STATUS_" + newStatus);
+                event.setReason(buildTransitionReason(previousStatus, newStatus, request.getAdminNotes()));
+                event.setPerformedBy(currentUsernameOrSystem());
+                event.setOccurredAt(LocalDateTime.now());
+                event.setEmergency(saved.getEmergency());
+                event.setJurisdictionTag(saved.getJurisdictionTag());
+                historyRepository.save(event);
+            } catch (Exception ex) {
+                logger.warn("Could not persist status-change audit row for complaint {}: {}",
+                        id, ex.getMessage());
+            }
+        }
+
         logger.info("Complaint {} updated successfully", id);
-        return complaintRepository.save(complaint);
+        return saved;
+    }
+
+    private static String buildTransitionReason(String previousStatus, String newStatus, String adminNotes) {
+        String prev = previousStatus == null ? "(unset)" : previousStatus;
+        StringBuilder sb = new StringBuilder("Status: ").append(prev).append(" -> ").append(newStatus);
+        if (adminNotes != null && !adminNotes.isBlank()) {
+            sb.append(". Notes: ").append(adminNotes.trim());
+        }
+        return sb.toString();
+    }
+
+    private static String currentUsernameOrSystem() {
+        try {
+            org.springframework.security.core.Authentication auth =
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && auth.getName() != null
+                    && !"anonymousUser".equals(auth.getName())) {
+                return auth.getName();
+            }
+        } catch (Exception ignored) {
+            // fall through
+        }
+        return "system";
     }
 
     public ComplaintStatsDto getStats() {
         List<Complaint> all = complaintRepository.findAll();
         long total = all.size();
         long pending = all.stream().filter(c -> "PENDING".equalsIgnoreCase(c.getStatus())).count();
+        long accepted = all.stream().filter(c -> "ACCEPTED".equalsIgnoreCase(c.getStatus())).count();
         long underReview = all.stream().filter(c -> "UNDER_REVIEW".equalsIgnoreCase(c.getStatus())).count();
         long rejected = all.stream().filter(c -> "REJECTED".equalsIgnoreCase(c.getStatus())).count();
+        long forwarded = all.stream().filter(c -> "FORWARDED".equalsIgnoreCase(c.getStatus())).count();
         long assigned = all.stream().filter(c -> "ASSIGNED".equalsIgnoreCase(c.getStatus())).count();
         long inProgress = all.stream().filter(c -> "IN_PROGRESS".equalsIgnoreCase(c.getStatus())).count();
         long resolved = all.stream().filter(c -> "RESOLVED".equalsIgnoreCase(c.getStatus())).count();
         long highSeverity = all.stream().filter(c -> "HIGH".equalsIgnoreCase(c.getSeverity())).count();
 
-        return new ComplaintStatsDto(total, pending, underReview, rejected, assigned, inProgress, resolved, highSeverity);
+        return new ComplaintStatsDto(total, pending, accepted, underReview, rejected, forwarded, assigned, inProgress, resolved, highSeverity);
     }
 
     public List<Complaint> reanalyzeComplaintsWithMissingAiLabels() {
@@ -337,6 +401,44 @@ public class ComplaintService {
                     return b.getTimestamp().compareTo(a.getTimestamp());
                 })
                 .toList();
+    }
+
+    public Complaint forwardToDepartment(Long id, String department, String reason) {
+        if (department == null || department.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Department is required");
+        }
+        Complaint complaint = getById(id);
+        String previousDepartment = complaint.getDepartment();
+
+        complaint.setStatus("FORWARDED");
+        complaint.setDepartment(department);
+        complaint.setRoutedDepartment(department);
+        complaint.setRoutingMode("MANUAL");
+        Complaint saved = complaintRepository.save(complaint);
+
+        if (historyRepository != null) {
+            ComplaintAssignmentHistory event = new ComplaintAssignmentHistory();
+            event.setComplaintId(id);
+            event.setDepartment(department);
+            event.setPreviousDepartment(previousDepartment);
+            event.setAction("FORWARDED");
+            event.setReason(reason != null ? reason : "Forwarded to " + department);
+            event.setPerformedBy(currentUsernameOrSystem());
+            event.setOccurredAt(LocalDateTime.now());
+            event.setEmergency(saved.getEmergency());
+            historyRepository.save(event);
+        }
+        return saved;
+    }
+
+    public Complaint uploadResolutionProof(Long id, org.springframework.web.multipart.MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image is required");
+        }
+        Complaint complaint = getById(id);
+        String url = imageStorageService.store(image);
+        complaint.setResolutionProofUrl(url);
+        return complaintRepository.save(complaint);
     }
 
     public java.util.Map<String, Object> getTimeline(Long id) {

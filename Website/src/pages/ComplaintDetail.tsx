@@ -10,14 +10,15 @@ import type { Complaint, ComplaintUpdatePayload } from '@/types/complaint'
 import { formatDate, formatPercent, parseDetections } from '@/utils/format'
 import { fetchAuthorities } from '@/api/authorities'
 import type { Authority } from '@/api/authorities'
-import { fetchMapComplaints } from '@/api/complaints'
+import { fetchMapComplaints, fetchTimeline } from '@/api/complaints'
 import { useAsync } from '@/hooks/useAsync'
 import { DetailSection } from '@/components/complaints/detail/DetailSection'
 import { DetailEmptyState } from '@/components/complaints/detail/DetailEmptyState'
 import { ComplaintStatusTracker } from '@/components/complaints/detail/ComplaintStatusTracker'
-import { ComplaintActivityTimeline, buildLiveComplaintTimeline } from '@/components/complaints/detail/ComplaintActivityTimeline'
+import { ComplaintActivityTimeline, buildLiveComplaintTimeline, buildTimelineFromEvents } from '@/components/complaints/detail/ComplaintActivityTimeline'
 import { RelatedComplaintsList } from '@/components/complaints/detail/RelatedComplaintsList'
-import { STATUSES } from '@/types/complaint'
+import { ComplaintActionPanel } from '@/components/complaints/ComplaintActionPanel'
+import { ComplaintForwardPanel } from '@/components/complaints/ComplaintForwardPanel'
 
 export default function ComplaintDetail() {
   const { id } = useParams<{ id: string }>()
@@ -62,6 +63,21 @@ export default function ComplaintDetail() {
       mounted = false
     }
   }, [])
+
+  const [apiTimelineEntries, setApiTimelineEntries] = useState<ReturnType<typeof buildTimelineFromEvents>>([])
+
+  useEffect(() => {
+    if (!complaintId) return
+    let mounted = true
+    fetchTimeline(complaintId)
+      .then((data) => {
+        if (mounted && data.events?.length) {
+          setApiTimelineEntries(buildTimelineFromEvents(data.events))
+        }
+      })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [complaintId, complaint?.status])
 
   const handlePatch = async (payload: ComplaintUpdatePayload) => {
     setSaving(true)
@@ -297,6 +313,18 @@ export default function ComplaintDetail() {
                       <dt className="text-sm text-slate-500">Citizen note</dt>
                       <dd className="mt-1 text-sm leading-6 text-slate-700">{complaint.description || 'No description provided in the current complaint snapshot.'}</dd>
                     </div>
+                    {complaint.expectedRepairDate && (
+                      <div className="flex items-start justify-between gap-4 rounded-2xl bg-slate-50 px-3 py-2.5">
+                        <dt className="text-sm text-slate-500">Expected repair</dt>
+                        <dd className="text-sm font-semibold text-slate-950">{complaint.expectedRepairDate}</dd>
+                      </div>
+                    )}
+                    {complaint.resolvedAt && (
+                      <div className="flex items-start justify-between gap-4 rounded-2xl bg-emerald-50 px-3 py-2.5">
+                        <dt className="text-sm text-emerald-600">Resolved at</dt>
+                        <dd className="text-sm font-semibold text-emerald-700">{formatDate(complaint.resolvedAt)}</dd>
+                      </div>
+                    )}
                   </dl>
                 </div>
               </div>
@@ -420,42 +448,36 @@ export default function ComplaintDetail() {
             </div>
           </DetailSection>
 
-          <DetailSection title="Resolution workflow" subtitle="Quick actions for the current record snapshot">
-            <div className="grid gap-2">
-              {STATUSES.map((status) => {
-                const active = complaint.status === status
-                return (
-                  <button
-                    key={status}
-                    type="button"
-                    disabled={saving || active}
-                    onClick={async () => {
-                      const success = await handlePatch({ status, department, adminNotes })
-                      if (success) {
-                        setMessage(`Status updated to ${status}`)
-                      }
-                    }}
-                    className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                      active
-                        ? 'border-brand-200 bg-brand-50 text-brand-700'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:text-brand-700'
-                    }`}
-                  >
-                    <span>{status.replace(/_/g, ' ').toLowerCase()}</span>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      {active ? 'Current' : 'Set'}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
+          <DetailSection title="Action panel" subtitle="Approve, reject, or resolve this complaint">
+            <ComplaintActionPanel
+              complaint={complaint}
+              department={department}
+              adminNotes={adminNotes}
+              saving={saving}
+              onPatch={async (payload) => {
+                const success = await handlePatch(payload)
+                if (success && payload.status) {
+                  setMessage(`Status updated to ${payload.status.replace(/_/g, ' ').toLowerCase()}`)
+                }
+              }}
+            />
           </DetailSection>
 
-          <DetailSection title="Complaint history" subtitle="Live snapshot timeline from the current API payload">
+          <DetailSection title="Forward to department" subtitle="Route accepted complaints to the responsible government department">
+            <ComplaintForwardPanel
+              complaint={complaint}
+              onForwarded={(updated) => {
+                reload()
+                setMessage(`Forwarded to ${updated.department}`)
+              }}
+            />
+          </DetailSection>
+
+          <DetailSection title="Complaint history" subtitle="Audit trail of all status changes and actions">
             <ComplaintActivityTimeline
-              entries={timelineEntries}
-              emptyTitle="No activity available"
-              emptyDescription="The current complaint record does not expose a historical log, so there is nothing to display here beyond the live snapshot."
+              entries={apiTimelineEntries.length ? apiTimelineEntries : timelineEntries}
+              emptyTitle="No audit trail yet"
+              emptyDescription="Status changes and forwarding actions will appear here as the complaint progresses through the workflow."
             />
           </DetailSection>
         </div>
@@ -478,38 +500,39 @@ export default function ComplaintDetail() {
           />
         </DetailSection>
 
-        <DetailSection title="Resolution evidence" subtitle="Uploaded image and AI output used for the current disposition">
-          {hasEvidence ? (
-            <div className="space-y-4">
-              <div className={`grid gap-4 ${complaint.aiProcessedImageUrl ? 'sm:grid-cols-2' : 'sm:grid-cols-1'}`}>
-                <figure className="overflow-hidden rounded-[22px] border border-slate-200 bg-slate-50">
-                  <img src={imageSrc(complaint.imageUrl)} alt={`Resolution evidence image ${complaint.id}`} className="h-44 w-full object-cover" />
-                  <figcaption className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Citizen upload
-                  </figcaption>
-                </figure>
-                {complaint.aiProcessedImageUrl ? (
-                  <figure className="overflow-hidden rounded-[22px] border border-slate-200 bg-slate-50">
-                    <img src={imageSrc(complaint.aiProcessedImageUrl)} alt={`AI evidence image ${complaint.id}`} className="h-44 w-full object-cover" />
-                    <figcaption className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      AI processed evidence
-                    </figcaption>
-                  </figure>
-                ) : null}
+        <DetailSection title="Resolution proof" subtitle="Before/after images and department resolution evidence">
+          <div className="space-y-4">
+            {complaint.resolutionProofUrl ? (
+              <figure className="overflow-hidden rounded-[22px] border border-emerald-200 bg-emerald-50">
+                <img src={imageSrc(complaint.resolutionProofUrl)} alt="Resolution proof" className="h-44 w-full object-cover" />
+                <figcaption className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600">
+                  Resolution proof (after repair)
+                </figcaption>
+              </figure>
+            ) : (
+              <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50/80 px-5 py-6 text-sm text-slate-500">
+                <p className="font-semibold text-slate-900">No resolution proof uploaded</p>
+                <p className="mt-2 leading-6">Upload a photo showing the completed repair to close the transparency loop.</p>
               </div>
-              <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Evidence summary</p>
-                <p className="mt-2 leading-6">
-                  {complaint.aiLabel || 'Unclassified'} · {formatPercent(complaint.aiConfidence ?? undefined)} confidence · {complaint.severity} severity.
-                </p>
+            )}
+            {hasEvidence && (
+              <figure className="overflow-hidden rounded-[22px] border border-slate-200 bg-slate-50">
+                <img src={imageSrc(complaint.imageUrl)} alt="Original complaint" className="h-44 w-full object-cover" />
+                <figcaption className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Original citizen upload (before)
+                </figcaption>
+              </figure>
+            )}
+            {complaint.departmentResponse && (
+              <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Department response</p>
+                <p className="mt-2 leading-6 text-slate-700">{complaint.departmentResponse}</p>
+                {complaint.departmentResponseDate && (
+                  <p className="mt-1 text-xs text-slate-400">{formatDate(complaint.departmentResponseDate)}</p>
+                )}
               </div>
-            </div>
-          ) : (
-            <DetailEmptyState
-              title="No evidence images available"
-              description="The current complaint snapshot does not include image evidence that can be presented in this section."
-            />
-          )}
+            )}
+          </div>
         </DetailSection>
       </div>
     </div>
