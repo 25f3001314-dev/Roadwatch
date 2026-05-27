@@ -1,4 +1,5 @@
 export const API_ROUTES = {
+<<<<<<< HEAD
   login: '/api/auth/login',
   me: '/api/auth/me',
   complaints: '/api/complaints',
@@ -11,6 +12,14 @@ export const API_ROUTES = {
   authorities: '/api/authorities',
   officers: '/api/officers',
   health: '/actuator/health',
+=======
+  login: '/auth/login',
+  complaints: '/complaints',
+  stats: '/complaints/stats',
+  map: '/complaints/map',
+  roads: '/roads',
+  authorities: '/authorities',
+>>>>>>> e43aea6 (update frontend api config)
 } as const
 
 export const AUTH_STORAGE_KEY = 'roadwatch_token'

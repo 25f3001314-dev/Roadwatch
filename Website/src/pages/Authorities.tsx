@@ -35,15 +35,15 @@ export default function Authorities() {
     setError('')
     try {
       const { data } = await api.get<unknown>(API_ROUTES.authorities)
-      console.log('Authorities API response:', data)
+      console.log('Departments API response:', data)
       const normalized = normalizeAuthoritiesResponse(data)
       setAuthorities(normalized)
       if (!normalized.length) {
-        setError('No authorities returned from the API.')
+        setError('No departments returned from the API.')
       }
     } catch (error) {
-      console.error('Failed to load authorities:', error)
-      setError('Failed to load authorities. Please try again.')
+      console.error('Failed to load departments:', error)
+      setError('Failed to load departments. Please try again.')
       setAuthorities([])
     } finally {
       setLoading(false)
@@ -93,15 +93,18 @@ export default function Authorities() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-900">Authorities</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Departments</h2>
+          <p className="mt-1 text-sm text-slate-500">Manage the departments that receive forwarded complaints and review their status updates.</p>
+        </div>
         <button onClick={handleOpenCreate} className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
-          <Plus size={16} /> Add Authority
+          <Plus size={16} /> Add Department
         </button>
       </div>
 
       <div className="mt-6 overflow-auto rounded-xl border border-slate-200 bg-white p-4">
         {loading ? (
-          <LoadingState message="Loading authorities…" />
+          <LoadingState message="Loading departments…" />
         ) : error ? (
           <p className="text-sm text-rose-600">{error}</p>
         ) : (
@@ -142,10 +145,10 @@ export default function Authorities() {
       {showModal && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
           <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-lg">
-            <h3 className="text-lg font-semibold">{editing ? 'Edit' : 'Add'} Authority</h3>
+            <h3 className="text-lg font-semibold">{editing ? 'Edit' : 'Add'} Department</h3>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="md:col-span-1">
-                <label className="mb-1 block text-xs font-medium text-slate-700">Name</label>
+                <label className="mb-1 block text-xs font-medium text-slate-700">Department Name</label>
                 <input className="h-8.5 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs" value={form.name || ''} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </div>
 

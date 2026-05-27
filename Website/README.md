@@ -37,7 +37,18 @@ Open http://localhost:5173 — default login: `admin` / `admin123`.
 
 ## Deploy to Vercel
 
+<<<<<<< HEAD
 There are two equivalent ways. Pick one — both work.
+=======
+| Setting | Value |
+|---------|--------|
+| Root Directory | `Website` |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+| Environment | `VITE_API_BASE_URL` = your production API URL (AWS backend URL for remote deployments) |
+
+If the admin UI and backend are deployed on the same origin, the app can also use a relative `/api` path.
+>>>>>>> e43aea6 (update frontend api config)
 
 ### Option A — deploy from repo root (recommended for monorepo)
 

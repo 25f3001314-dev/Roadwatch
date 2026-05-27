@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/complaints").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
                         .requestMatchers("/api/images/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/governance/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/roads/*/lifecycle").permitAll()
@@ -60,7 +61,24 @@ public class SecurityConfig {
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();
+<<<<<<< HEAD
         config.setAllowedOriginPatterns(origins);
+=======
+        List<String> exactOrigins = origins.stream()
+                .filter(s -> !s.contains("*"))
+                .toList();
+        List<String> wildcardOrigins = origins.stream()
+                .filter(s -> s.contains("*"))
+                .toList();
+
+        if (!exactOrigins.isEmpty()) {
+            config.setAllowedOrigins(exactOrigins);
+        }
+        if (!wildcardOrigins.isEmpty()) {
+            config.setAllowedOriginPatterns(wildcardOrigins);
+        }
+
+>>>>>>> e43aea6 (update frontend api config)
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

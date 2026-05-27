@@ -7,5 +7,6 @@ export interface Road {
   lastRelayingDate?: string | null
   budgetSanctioned?: number | null
   budgetSpent?: number | null
+  lengthKm?: number | null
   status?: string | null
 }

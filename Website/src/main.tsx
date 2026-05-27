@@ -1,8 +1,9 @@
-import { Component, StrictMode, type ReactNode } from 'react'
+import { Component, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from '@/App'
 import { AuthProvider } from '@/context/AuthContext'
+import 'leaflet/dist/leaflet.css'
 import '@/index.css'
 
 class AppErrorBoundary extends Component<
@@ -50,13 +51,11 @@ class AppErrorBoundary extends Component<
 }
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AppErrorBoundary>
-      <BrowserRouter>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </BrowserRouter>
-    </AppErrorBoundary>
-  </StrictMode>
+  <AppErrorBoundary>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
+  </AppErrorBoundary>
 )

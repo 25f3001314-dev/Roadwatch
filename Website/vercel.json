@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "buildCommand": "npm run build",
@@ -25,4 +26,7 @@
       ]
     }
   ]
+=======
+  "rewrites": [{ "source": "/:path*", "destination": "/index.html" }]
+>>>>>>> e43aea6 (update frontend api config)
 }
