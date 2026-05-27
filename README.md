@@ -49,13 +49,13 @@ See [Website/README.md](Website/README.md) for full details.
 | Admin UI | Vercel |
 | API | AWS EC2 (Spring Boot) |
 | Database | AWS RDS / Neon / Supabase (PostgreSQL) |
-| AI | AWS EC2 GPU / Render |
+| AI | HuggingFace Spaces |
 
 > Remember: the Spring Boot API on EC2 must include the Vercel domain in `CORS_ALLOWED_ORIGINS`.
 
-## Environment variables for Render
+## Environment variables for AWS EC2 Backend
 
-The backend requires the following production variables in Render or your hosting environment:
+The backend requires the following production variables on the AWS EC2 instance:
 
 - `SPRING_DATASOURCE_URL`
 - `SPRING_DATASOURCE_USERNAME`

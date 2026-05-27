@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { AUTH_STORAGE_KEY } from '@/constants/config'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://roadwatch-mb82.onrender.com'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://16.176.208.7:8080'
 
 export const api = axios.create({
   baseURL: API_BASE,
