@@ -1,22 +1,7 @@
 import axios from 'axios'
 import { AUTH_STORAGE_KEY } from '@/constants/config'
 
-<<<<<<< HEAD
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
-=======
-const rawApiBase = import.meta.env.VITE_API_BASE_URL?.trim()
-const isLocalBrowser = typeof window !== 'undefined' && ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname)
-const isLocalApi = rawApiBase?.startsWith('http://localhost') || rawApiBase?.startsWith('http://127.0.0.1')
-const API_BASE = rawApiBase && (isLocalBrowser || !isLocalApi) ? rawApiBase : '/api'
-
-if (rawApiBase && rawApiBase !== API_BASE) {
-  console.warn(
-    `[RoadWatch] VITE_API_BASE_URL=${rawApiBase} ignored because the app is not running in a local browser. Falling back to /api proxy.`
-  )
-}
-
-console.log('[RoadWatch] API base URL:', API_BASE)
->>>>>>> e43aea6 (update frontend api config)
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.trim() || '/api'
 
 export const api = axios.create({
   baseURL: API_BASE,
