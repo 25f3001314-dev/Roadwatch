@@ -40,55 +40,12 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-<<<<<<< HEAD
         seedContractors();
         seedRoads();
         seedAuthorities();
         seedProjects();
         seedRepairs();
         seedSchedules();
-=======
-        if (roadRepository.count() == 0) {
-            roadRepository.saveAll(List.of(
-                    createRoad(
-                            "ROAD-NH-01",
-                            "Delhi-Meerut Expressway",
-                            "NH",
-                            "L&T Infra",
-                            450_000_000d,
-                            420_000_000d,
-                            "IN_PROGRESS"
-                    ),
-                    createRoad(
-                            "ROAD-NH-28",
-                            "Gorakhpur-Basti Highway",
-                            "NH",
-                            "Tata Projects",
-                            620_000_000d,
-                            580_000_000d,
-                            "IN_PROGRESS"
-                    ),
-                    createRoad(
-                            "ROAD-SH-12",
-                            "Lucknow-Barabanki Highway",
-                            "SH",
-                            "Dilip Buildcon",
-                            180_000_000d,
-                            195_000_000d,
-                            "IN_PROGRESS"
-                    )
-            ));
-        }
-
-        if (authorityRepository.count() == 0) {
-            authorityRepository.saveAll(List.of(
-                    createAuthority("PWD Department", "Executive Engineer", "North Zone", "pwd@roadwatch.gov", "+91 98765 43210", "North District"),
-                    createAuthority("Jal Parivah", "Department Head", "East Zone", "jalparivah@roadwatch.gov", "+91 91234 56789", "East District"),
-                    createAuthority("NHAI", "Project Manager", "Central Zone", "nhai@roadwatch.gov", "+91 99876 54321", "Central District"),
-                    createAuthority("State PWD", "Senior Engineer", "South Zone", "statepwd@roadwatch.gov", "+91 91111 22233", "South District")
-            ));
-        }
->>>>>>> e43aea6 (update frontend api config)
     }
 
     private void seedContractors() {
@@ -103,7 +60,6 @@ public class DataInitializer implements CommandLineRunner {
         ));
     }
 
-<<<<<<< HEAD
     private void seedRoads() {
         if (roadRepository.count() > 0) return;
         roadRepository.saveAll(List.of(
@@ -293,16 +249,5 @@ public class DataInitializer implements CommandLineRunner {
         m.setAssignedContractorId(contractorId);
         m.setFrequencyDays(freqDays);
         return m;
-=======
-    private Authority createAuthority(String name, String designation, String zone, String email, String phone, String district) {
-        Authority authority = new Authority();
-        authority.setName(name);
-        authority.setDesignation(designation);
-        authority.setZone(zone);
-        authority.setEmail(email);
-        authority.setPhone(phone);
-        authority.setDistrict(district);
-        return authority;
->>>>>>> e43aea6 (update frontend api config)
     }
 }
