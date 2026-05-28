@@ -436,7 +436,12 @@ public class ComplaintService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image is required");
         }
         Complaint complaint = getById(id);
-        String url = imageStorageService.store(image);
+        String url;
+        try {
+            url = imageStorageService.store(image);
+        } catch (java.io.IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Image upload failed: " + e.getMessage());
+        }
         complaint.setResolutionProofUrl(url);
         return complaintRepository.save(complaint);
     }
