@@ -17,6 +17,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -60,16 +61,14 @@ public class SecurityConfig {
         List<String> origins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .toList();
-<<<<<<< HEAD
-        config.setAllowedOriginPatterns(origins);
-=======
+                .collect(Collectors.toList());
+
         List<String> exactOrigins = origins.stream()
                 .filter(s -> !s.contains("*"))
-                .toList();
+                .collect(Collectors.toList());
         List<String> wildcardOrigins = origins.stream()
                 .filter(s -> s.contains("*"))
-                .toList();
+                .collect(Collectors.toList());
 
         if (!exactOrigins.isEmpty()) {
             config.setAllowedOrigins(exactOrigins);
@@ -77,8 +76,6 @@ public class SecurityConfig {
         if (!wildcardOrigins.isEmpty()) {
             config.setAllowedOriginPatterns(wildcardOrigins);
         }
-
->>>>>>> e43aea6 (update frontend api config)
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
