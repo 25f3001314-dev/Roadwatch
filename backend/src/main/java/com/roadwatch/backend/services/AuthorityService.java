@@ -36,6 +36,8 @@ public class AuthorityService {
         if (payload.getEmail() != null) existing.setEmail(payload.getEmail());
         if (payload.getPhone() != null) existing.setPhone(payload.getPhone());
         if (payload.getDistrict() != null) existing.setDistrict(payload.getDistrict());
+        if (payload.getDepartment() != null) existing.setDepartment(payload.getDepartment());
+        if (payload.getState() != null) existing.setState(payload.getState());
         return authorityRepository.save(existing);
     }
 
