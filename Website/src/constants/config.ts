@@ -1,3 +1,6 @@
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://13.55.212.9:8080'
+
+
 export const API_ROUTES = {
   login: '/api/auth/login',
   me: '/api/auth/me',
