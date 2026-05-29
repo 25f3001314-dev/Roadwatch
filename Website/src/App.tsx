@@ -7,7 +7,6 @@ import { LoadingState } from '@/components/ui/LoadingState'
 // Auth & landing — eager
 import Login from '@/pages/Login'
 import Dashboard from '@/pages/Dashboard'
-<<<<<<< HEAD
 
 // Lazy-loaded routes (each gets its own Vite chunk)
 const Complaints = lazy(() => import('@/pages/Complaints'))
@@ -28,17 +27,6 @@ function PageFallback() {
     </div>
   )
 }
-=======
-import Complaints from '@/pages/Complaints'
-import ComplaintDetail from '@/pages/ComplaintDetail'
-import ComplaintPipeline from '@/pages/ComplaintPipeline'
-import MapView from '@/pages/MapView'
-import Roads from '@/pages/Roads'
-import Departments from '@/pages/Departments'
-import EmergencyCases from '@/pages/EmergencyCases'
-import ResolvedComplaints from '@/pages/ResolvedComplaints'
-import Settings from '@/pages/Settings'
->>>>>>> e43aea6 (update frontend api config)
 
 export default function App() {
   return (
@@ -51,7 +39,6 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-<<<<<<< HEAD
         <Route
           index
           element={
@@ -140,18 +127,6 @@ export default function App() {
             </Suspense>
           }
         />
-=======
-        <Route index element={<Dashboard />} />
-        <Route path="complaints" element={<Complaints />} />
-        <Route path="complaints/:id" element={<ComplaintDetail />} />
-        <Route path="complaint-pipeline" element={<ComplaintPipeline />} />
-        <Route path="roads" element={<Roads />} />
-        <Route path="departments" element={<Departments />} />
-        <Route path="map" element={<MapView />} />
-        <Route path="emergency-cases" element={<EmergencyCases />} />
-        <Route path="resolved-complaints" element={<ResolvedComplaints />} />
-        <Route path="settings" element={<Settings />} />
->>>>>>> e43aea6 (update frontend api config)
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
