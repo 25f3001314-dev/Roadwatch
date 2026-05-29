@@ -7,7 +7,7 @@
   "trailingSlash": false,
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/api/:path*", "destination": "http://16.176.208.7:8080/api/:path*" },
+    { "source": "/api/:path*", "destination": "http://13.55.212.9:8080/api/:path*" },
     { "source": "/((?!assets/|geo/|.*\\.json|favicon\\.svg|robots\\.txt).*)", "destination": "/index.html" }
   ]
 }
