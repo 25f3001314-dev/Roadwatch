@@ -8,6 +8,6 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/api/:path*", "destination": "http://13.55.212.9:8080/api/:path*" },
-    { "source": "/((?!assets/|geo/|.*\\.json|favicon\\.svg|robots\\.txt).*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
