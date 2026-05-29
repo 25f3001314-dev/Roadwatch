@@ -74,8 +74,8 @@ export function ComplaintForwardPanel({ complaint, onForwarded }: ComplaintForwa
             if (!dept) return null
             return (
               <div className="mt-2 space-y-1 text-slate-600">
-                <p>Officer: <span className="font-medium text-slate-900">{dept.officer}</span></p>
-                <p>Email: <span className="font-medium text-slate-900">{dept.email}</span></p>
+                <p>Officer: <span className="font-medium text-slate-900">{(dept as any).officer}</span></p>
+                <p>Email: <span className="font-medium text-slate-900">{(dept as any).email}</span></p>
                 <p>Road types: <span className="font-medium text-slate-900">{dept.roadTypes.join(', ')}</span></p>
               </div>
             )

@@ -36,7 +36,7 @@ export default function Roads() {
   const [editing, setEditing] = useState<Officer | null>(null)
   const [form, setForm] = useState<Partial<Officer>>(EMPTY)
   const [saving, setSaving] = useState(false)
-  const [customContractors, setCustomContractors] = useState<ContractorRecord[]>([])
+  // removed unused state
 
   const load = async () => {
     setLoading(true)
