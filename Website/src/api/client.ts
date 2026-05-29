@@ -34,6 +34,9 @@ api.interceptors.response.use(
 
 export function imageSrc(url: string | null | undefined): string {
   if (!url) return ''
+  // Strip absolute origin so image requests go through Vercel proxy
+  const match = url.match(/\/api\/images\/.+/)
+  if (match) return match[0]
   if (url.startsWith('http')) return url
   const base = API_BASE.replace(/\/$/, '')
   return `${base}${url.startsWith('/') ? url : `/${url}`}`
