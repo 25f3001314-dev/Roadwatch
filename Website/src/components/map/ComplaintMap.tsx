@@ -59,10 +59,10 @@ export function ComplaintMap({
   isLoading = false,
 }: ComplaintMapProps) {
   const safeComplaints = Array.isArray(complaints) ? complaints : []
-  const withLocation = safeComplaints.filter((c) => c.location?.latitude != null && c.location?.longitude != null)
+  const withLocation = safeComplaints.filter((c) => c.lat != null && c.lng != null)
   const mapCenter: [number, number] =
     withLocation.length > 0
-      ? [withLocation[0].location!.latitude, withLocation[0].location!.longitude]
+      ? [withLocation[0].lat!, withLocation[0].lng!]
       : [28.6139, 77.209]
 
   return (
@@ -75,7 +75,7 @@ export function ComplaintMap({
         {withLocation.map((c) => (
           <Marker
             key={c.id}
-            position={[c.location!.latitude, c.location!.longitude]}
+            position={[c.lat!, c.lng!]}
             icon={createComplaintIcon(c.status)}
           >
             <Popup>

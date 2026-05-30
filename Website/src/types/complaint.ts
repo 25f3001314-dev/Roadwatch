@@ -8,6 +8,8 @@ export interface Complaint {
   description?: string | null
   imageUrl: string
   location?: LocationPoint | null
+  lat?: number | null
+  lng?: number | null
   timestamp: string
   severity: string
   status: string
