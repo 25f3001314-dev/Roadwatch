@@ -30,18 +30,20 @@ export interface DepartmentPerformancePoint {
 }
 
 const DISTRIBUTION_COLORS = ['#7c3aed', '#0ea5e9', '#14b8a6', '#f59e0b', '#f43f5e', '#8b5cf6', '#22c55e']
-const STATUS_ORDER = ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'] as const
+const STATUS_ORDER = ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'] as const
 const STATUS_LABELS: Record<(typeof STATUS_ORDER)[number], string> = {
   PENDING: 'Pending',
   ASSIGNED: 'Assigned',
   IN_PROGRESS: 'In progress',
   RESOLVED: 'Resolved',
+  REJECTED: 'Rejected',
 }
 const STATUS_COLORS: Record<(typeof STATUS_ORDER)[number], string> = {
   PENDING: '#eab308',
   ASSIGNED: '#0ea5e9',
   IN_PROGRESS: '#8b5cf6',
   RESOLVED: '#16a34a',
+  REJECTED: '#94a3b8',
 }
 const SEVERITY_ORDER = ['HIGH', 'MEDIUM', 'LOW'] as const
 const SEVERITY_LABELS: Record<(typeof SEVERITY_ORDER)[number], string> = {
