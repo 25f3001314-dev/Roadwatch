@@ -195,7 +195,7 @@ export function buildDepartmentPerformanceData(complaints: Complaint[]): Departm
 }
 
 export function countGeoTaggedComplaints(complaints: Complaint[]): number {
-  return complaints.filter((complaint) => complaint.location?.latitude != null && complaint.location?.longitude != null).length
+  return complaints.filter((complaint) => complaint.lat != null && complaint.lng != null).length
 }
 
 export function countUniqueLabels(
@@ -234,6 +234,6 @@ export function hasComplaintData(complaints: Complaint[]): boolean {
 }
 
 export function formatComplaintLocation(complaint: Complaint): string {
-  if (complaint.location?.latitude == null || complaint.location?.longitude == null) return 'Location not captured'
-  return `${complaint.location.latitude.toFixed(4)}, ${complaint.location.longitude.toFixed(4)}`
+  if (complaint.lat == null || complaint.lng == null) return 'Location not captured'
+  return `${complaint.lat!.toFixed(4)}, ${complaint.lng!.toFixed(4)}`
 }
