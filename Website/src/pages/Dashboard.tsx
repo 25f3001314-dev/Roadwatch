@@ -101,7 +101,7 @@ export default function Dashboard() {
   const recentComplaints = Array.isArray(recent.data?.content) ? recent.data.content : []
   const recentInvalid = !!recent.data && !Array.isArray(recent.data.content)
 
-  const trendData = useMemo(() => buildDailyTrend(complaints, 7), [complaints])
+  const trendData = useMemo(() => buildDailyTrend(complaints, 30), [complaints])
   const statusData = useMemo(() => buildStatusDistribution(complaints), [complaints])
   const severityData = useMemo(() => buildSeverityDistribution(complaints), [complaints])
   const labelData = useMemo(() => buildLabelDistribution(complaints), [complaints])

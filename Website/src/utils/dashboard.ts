@@ -107,7 +107,7 @@ export function groupComplaintsBy(
     .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))
 }
 
-export function buildDailyTrend(complaints: Complaint[], days = 7): TrendPoint[] {
+export function buildDailyTrend(complaints: Complaint[], days = 30): TrendPoint[] {
   const counts = new Map<string, number>()
   const resolvedByDate = new Map<string, number>()
   const pendingByDate = new Map<string, number>()
