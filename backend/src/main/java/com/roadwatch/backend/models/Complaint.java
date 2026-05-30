@@ -36,6 +36,10 @@ public class Complaint {
     @JsonSerialize(using = PointToJsonSerializer.class)
     private Point location;
 
+    private Double lat;
+
+    private Double lng;
+
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Kolkata")
@@ -112,6 +116,10 @@ public class Complaint {
     public void setDescription(String description) { this.description = description; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public Double getLat() { return lat; }
+    public void setLat(Double lat) { this.lat = lat; }
+    public Double getLng() { return lng; }
+    public void setLng(Double lng) { this.lng = lng; }
     public Point getLocation() { return location; }
     public void setLocation(Point location) { this.location = location; }
     public LocalDateTime getTimestamp() { return timestamp; }
