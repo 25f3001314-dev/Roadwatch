@@ -7,6 +7,7 @@ import com.roadwatch.backend.dto.ComplaintUpdateRequest;
 import com.roadwatch.backend.models.Complaint;
 import com.roadwatch.backend.models.ComplaintAssignmentHistory;
 import com.roadwatch.backend.repositories.ComplaintRepository;
+import com.roadwatch.backend.services.WhatsAppNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,9 @@ public class ComplaintService {
 
     @Autowired(required = false)
     private com.roadwatch.backend.repositories.ComplaintAssignmentHistoryRepository historyRepository;
+
+    @Autowired(required = false)
+    private WhatsAppNotificationService whatsAppNotificationService;
 
     @org.springframework.beans.factory.annotation.Value("${roadwatch.ai.optional:false}")
     private boolean aiOptional;
@@ -218,6 +222,9 @@ public class ComplaintService {
             complaint.setStatus(status);
             if ("RESOLVED".equalsIgnoreCase(status) && complaint.getResolvedAt() == null) {
                 complaint.setResolvedAt(LocalDateTime.now());
+                if (whatsAppNotificationService != null && complaint.getReporterContact() != null) {
+                    whatsAppNotificationService.notifyComplaintResolved(complaint.getReporterContact(), complaint.getId(), complaint.getDepartment());
+                }
             }
             if (!status.equalsIgnoreCase(previousStatus)) {
                 newStatus = status;
