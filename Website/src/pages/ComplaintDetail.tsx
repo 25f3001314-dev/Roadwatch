@@ -206,8 +206,8 @@ export default function ComplaintDetail() {
         </div>
       </div>
 
-      <div className="grid gap-6 min-w-0 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.75fr)]">
-        <div className="space-y-6 min-w-0">
+      <div className="flex flex-col xl:flex-row gap-6 min-w-0 items-start">
+        <div className="space-y-6 min-w-0 xl:flex-[1.35]">
           <DetailSection title="Complaint evidence" subtitle="Original media, YOLO output, and summary of the detected issue">
             <div className="space-y-4">
               <div className={`grid gap-4 ${complaint.aiProcessedImageUrl ? 'lg:grid-cols-2' : 'lg:grid-cols-1'}`}>
@@ -337,10 +337,10 @@ export default function ComplaintDetail() {
                 <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Coordinates</p>
                   <p className="mt-1 text-sm font-semibold text-slate-950">
-                    {complaint.location.latitude.toFixed(4)}, {complaint.location.longitude.toFixed(4)}
+                    {Number(complaint.location.latitude).toFixed(4)}, {Number(complaint.location.longitude).toFixed(4)}
                   </p>
                 </div>
-                <ComplaintMap complaints={[complaint]} height="320px" zoom={16} />
+                <ComplaintMap complaints={[complaint]} height="1100px" zoom={16} />
               </div>
             ) : (
               <DetailEmptyState
@@ -351,7 +351,7 @@ export default function ComplaintDetail() {
           </DetailSection>
         </div>
 
-        <div className="space-y-4 min-w-0 xl:sticky xl:top-6 xl:self-start">
+        <div className="space-y-4 min-w-0 xl:w-[360px] xl:shrink-0 xl:sticky xl:top-6 xl:self-start">
           <DetailSection title="Status tracker" subtitle="Live workflow progression derived from the current complaint state">
             <ComplaintStatusTracker status={complaint.status} />
           </DetailSection>
