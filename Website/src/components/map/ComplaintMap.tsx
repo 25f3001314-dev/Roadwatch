@@ -34,6 +34,17 @@ function getMarkerColor(status: string): string {
   }
 }
 
+function getLocationCoords(location?: { latitude?: number | string; longitude?: number | string; lat?: number | string; lng?: number | string }) {
+  if (!location) return undefined
+  const latitude = location.latitude ?? location.lat
+  const longitude = location.longitude ?? location.lng
+  if (latitude == null || longitude == null) return undefined
+  const lat = Number(latitude)
+  const lng = Number(longitude)
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return undefined
+  return { latitude: lat, longitude: lng }
+}
+
 function createComplaintIcon(status: string) {
   const color = getMarkerColor(status)
   return L.divIcon({
@@ -59,10 +70,13 @@ export function ComplaintMap({
   isLoading = false,
 }: ComplaintMapProps) {
   const safeComplaints = Array.isArray(complaints) ? complaints : []
-  const withLocation = safeComplaints.filter((c) => c.location?.latitude != null && c.location?.longitude != null)
+  const withLocation = safeComplaints
+    .map((complaint) => ({ complaint, coords: getLocationCoords(complaint.location ?? undefined) }))
+    .filter((item): item is { complaint: Complaint; coords: { latitude: number; longitude: number } } => item.coords !== undefined)
+
   const mapCenter: [number, number] =
     withLocation.length > 0
-      ? [withLocation[0].location!.latitude, withLocation[0].location!.longitude]
+      ? [withLocation[0].coords.latitude, withLocation[0].coords.longitude]
       : [28.6139, 77.209]
 
   return (
@@ -72,10 +86,10 @@ export function ComplaintMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {withLocation.map((c) => (
+        {withLocation.map(({ complaint: c, coords }) => (
           <Marker
             key={c.id}
-            position={[c.location!.latitude, c.location!.longitude]}
+            position={[coords.latitude, coords.longitude]}
             icon={createComplaintIcon(c.status)}
           >
             <Popup>

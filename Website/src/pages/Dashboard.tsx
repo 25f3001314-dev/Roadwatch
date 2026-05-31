@@ -96,12 +96,14 @@ export default function Dashboard() {
   const { data: stats, error: statsError, loading: statsLoading, reload: reloadStats } = useStats(true)
   const recent = useAsync(() => fetchComplaints({ page: 0, size: RECENT_COMPLAINTS_SIZE }), [])
   const allComplaints = useAsync(() => fetchMapComplaints(), [])
+  const fullComplaints = useAsync(() => fetchComplaints({ size: 500 }).then((p: any) => p.content ?? p), [])
 
   const complaints = Array.isArray(allComplaints.data) ? allComplaints.data : []
+  const fullComplaintsList = Array.isArray(fullComplaints.data) ? fullComplaints.data : (fullComplaints.data as any)?.content ?? []
   const recentComplaints = Array.isArray(recent.data?.content) ? recent.data.content : []
   const recentInvalid = !!recent.data && !Array.isArray(recent.data.content)
 
-  const trendData = useMemo(() => buildDailyTrend(complaints, 7), [complaints])
+  const trendData = useMemo(() => buildDailyTrend(fullComplaintsList, 7), [fullComplaintsList])
   const statusData = useMemo(() => buildStatusDistribution(complaints), [complaints])
   const severityData = useMemo(() => buildSeverityDistribution(complaints), [complaints])
   const labelData = useMemo(() => buildLabelDistribution(complaints), [complaints])

@@ -206,8 +206,8 @@ export default function ComplaintDetail() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.75fr)]">
-        <div className="space-y-6">
+      <div className="grid gap-6 min-w-0 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.75fr)]">
+        <div className="space-y-6 min-w-0">
           <DetailSection title="Complaint evidence" subtitle="Original media, YOLO output, and summary of the detected issue">
             <div className="space-y-4">
               <div className={`grid gap-4 ${complaint.aiProcessedImageUrl ? 'lg:grid-cols-2' : 'lg:grid-cols-1'}`}>
@@ -345,13 +345,13 @@ export default function ComplaintDetail() {
             ) : (
               <DetailEmptyState
                 title="No map location captured"
-                description="The current complaint payload does not contain coordinates, so the citizen location map cannot be rendered."
+                description="No coordinates in complaint payload; map cannot be rendered."
               />
             )}
           </DetailSection>
         </div>
 
-        <div className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+        <div className="space-y-4 min-w-0 xl:sticky xl:top-6 xl:self-start">
           <DetailSection title="Status tracker" subtitle="Live workflow progression derived from the current complaint state">
             <ComplaintStatusTracker status={complaint.status} />
           </DetailSection>
