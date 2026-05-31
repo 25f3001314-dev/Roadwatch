@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useMemo, useEffect } from 'react'
+import { useMemo } from 'react'
 import { fetchComplaints, fetchMapComplaints } from '@/api/complaints'
 import { ComplaintTable } from '@/components/complaints/ComplaintTable'
 import { StatCard } from '@/components/complaints/StatCard'
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { RECENT_COMPLAINTS_SIZE, POLL_INTERVAL_MS } from '@/constants/config'
+import { RECENT_COMPLAINTS_SIZE } from '@/constants/config'
 import { useAsync } from '@/hooks/useAsync'
 import { useStats } from '@/hooks/useStats'
 import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState'
@@ -96,12 +96,6 @@ export default function Dashboard() {
   const { data: stats, error: statsError, loading: statsLoading, reload: reloadStats } = useStats(true)
   const recent = useAsync(() => fetchComplaints({ page: 0, size: RECENT_COMPLAINTS_SIZE }), [])
   const allComplaints = useAsync(() => fetchMapComplaints(), [])
-  const allComplaintsForDept = useAsync(() => fetchComplaints({ size: 200 }).then(p => p.content ?? p), [])
-
-  useEffect(() => {
-    const id = setInterval(allComplaints.reload, POLL_INTERVAL_MS)
-    return () => clearInterval(id)
-  }, [allComplaints.reload])
 
   const complaints = Array.isArray(allComplaints.data) ? allComplaints.data : []
   const recentComplaints = Array.isArray(recent.data?.content) ? recent.data.content : []
@@ -112,8 +106,7 @@ export default function Dashboard() {
   const severityData = useMemo(() => buildSeverityDistribution(complaints), [complaints])
   const labelData = useMemo(() => buildLabelDistribution(complaints), [complaints])
   const categoryData = useMemo(() => buildRoadTypeDistribution(complaints), [complaints])
-  const deptComplaints = Array.isArray(allComplaintsForDept.data) ? allComplaintsForDept.data : (allComplaintsForDept.data as any)?.content ?? []
-  const departmentData = useMemo(() => buildDepartmentPerformanceData(deptComplaints), [deptComplaints])
+  const departmentData = useMemo(() => buildDepartmentPerformanceData(complaints), [complaints])
   const highSeverityComplaints = useMemo(() => getLatestHighSeverityComplaints(complaints, 5), [complaints])
   const geoTaggedCount = countGeoTaggedComplaints(complaints)
   const departmentCount = countUniqueLabels(complaints, (complaint) => complaint.department, 'Unassigned')

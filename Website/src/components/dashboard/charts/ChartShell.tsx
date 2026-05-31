@@ -46,7 +46,7 @@ export function ChartShell({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col" style={{ minHeight, height: minHeight }}>
+    <div className="flex h-full min-h-0 flex-col" style={{ minHeight }}>
       {children}
     </div>
   )

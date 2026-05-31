@@ -18,7 +18,14 @@ import { useEffect, useState } from 'react'
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/complaints', label: 'Incoming Complaints', icon: List, end: false },
+<<<<<<< HEAD
   { to: '/complaint-pipeline', label: 'Assigned / Forwarded', icon: Route, end: false },
+=======
+  { to: '/complaint-pipeline', label: 'Assigned / Forwarded Complaints', icon: Route, end: false },
+  { to: '/departments', label: 'Departments', icon: Briefcase, end: false },
+  { to: '/roads', label: 'Roads & Contractors', icon: Users, end: false },
+  { to: '/map', label: 'Reports & Analytics', icon: BarChart3, end: false },
+>>>>>>> e43aea6 (update frontend api config)
   { to: '/emergency-cases', label: 'Emergency Cases', icon: ShieldAlert, end: false },
   { to: '/resolved-complaints', label: 'Resolved Complaints', icon: FileText, end: false },
   { to: '/map', label: 'Reports & Analytics', icon: BarChart3, end: false },
