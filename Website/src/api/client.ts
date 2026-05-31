@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { AUTH_STORAGE_KEY } from '@/constants/config'
 
-const API_BASE = ''
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export const api = axios.create({
   baseURL: API_BASE,
