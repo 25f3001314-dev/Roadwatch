@@ -18,7 +18,7 @@ export function DepartmentPerformanceChart({
   emptyDescription,
   height = 360,
 }: DepartmentPerformanceChartProps) {
-  const hasData = data.length > 0
+  const hasData = Array.isArray(data) && data.length > 0
 
   return (
     <ChartShell loading={loading} hasData={hasData} emptyTitle={emptyTitle} emptyDescription={emptyDescription} minHeight={height}>
