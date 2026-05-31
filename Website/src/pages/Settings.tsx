@@ -93,6 +93,7 @@ export default function Settings() {
         </section>
 
         {/* System */}
+        {buildMode !== 'production' && (
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2 text-slate-700">
             <Server size={16} />
@@ -110,6 +111,7 @@ export default function Settings() {
             )}
           </div>
         </section>
+        )}
 
         {/* Security */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
