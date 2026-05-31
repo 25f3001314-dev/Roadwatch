@@ -340,7 +340,7 @@ export default function ComplaintDetail() {
                     {Number(complaint.location.latitude).toFixed(4)}, {Number(complaint.location.longitude).toFixed(4)}
                   </p>
                 </div>
-                <ComplaintMap complaints={[complaint]} height="1100px" zoom={16} />
+                <ComplaintMap complaints={[complaint]} height="400px" zoom={16} />
               </div>
             ) : (
               <DetailEmptyState
