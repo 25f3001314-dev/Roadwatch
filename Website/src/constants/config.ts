@@ -35,3 +35,4 @@ export const COMPLAINT_SEVERITIES = ['HIGH', 'MEDIUM', 'LOW'] as const
 
 export type ComplaintStatus = (typeof COMPLAINT_STATUSES)[number]
 export type ComplaintSeverity = (typeof COMPLAINT_SEVERITIES)[number]
+export const API_BASE = ""
