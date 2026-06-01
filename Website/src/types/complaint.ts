@@ -69,6 +69,7 @@ export interface ComplaintUpdatePayload {
   adminNotes?: string
   departmentResponse?: string
   resolutionProofUrl?: string
+  routedDepartment?: string
 }
 
 export interface TimelineEvent {
@@ -87,6 +88,10 @@ export const DEPARTMENTS = [
   'NHAI',
   'PWD_STATE',
   'MUNI',
+  'dept_nhai_01',
+  'Roads Authority',
+  'Civic Maintenance',
+  'ROAD DEPARMENT',
 ] as const
 
 export const STATUSES = [

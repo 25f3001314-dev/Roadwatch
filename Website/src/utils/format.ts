@@ -23,6 +23,8 @@ export function parseDetections(json: string | null | undefined) {
 
 export function severityClass(severity: string): string {
   switch (severity?.toUpperCase()) {
+    case 'CRITICAL':
+      return 'border-purple-300 bg-purple-100 text-purple-800'
     case 'HIGH':
       return 'border-rose-200 bg-rose-50 text-rose-700'
     case 'MEDIUM':

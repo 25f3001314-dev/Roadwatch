@@ -42,7 +42,7 @@ export default function ComplaintDetail() {
 
   useEffect(() => {
     if (!complaint || authorities.length === 0) return
-    const matchedAuthority = authorities.find((a) => a.name === complaint.department)
+    const matchedAuthority = authorities.find((a) => a.name === complaint.assignedAuthorityName)
     setAssignedAuthority(matchedAuthority?.id ?? '')
   }, [authorities, complaint])
 

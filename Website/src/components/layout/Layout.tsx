@@ -23,7 +23,7 @@ const NAV_ITEMS = [
   { to: '/resolved-complaints', label: 'Resolved Complaints', icon: FileText, end: false },
   { to: '/map', label: 'Reports & Analytics', icon: BarChart3, end: false },
   { to: '/authorities', label: 'Departments', icon: Briefcase, end: false },
-  { to: '/roads', label: 'Officers / Employees', icon: Users, end: false },
+  { to: '/officers', label: 'Officers / Employees', icon: Users, end: false },
   { to: '/settings', label: 'Settings', icon: Settings2, end: false },
 ] as const
 
@@ -55,7 +55,7 @@ export function Layout() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
+    <div className="flex min-h-screen w-full overflow-hidden">
       <aside
         className={`flex flex-col border-r border-slate-800/70 bg-slate-950 text-white shadow-[0_18px_40px_rgba(15,23,42,0.25)] transition-all duration-200 ${
           collapsed ? 'w-20' : 'w-64'

@@ -9,7 +9,6 @@ export const API_ROUTES = {
   reanalyze: '/api/complaints/reanalyze',
   roads: '/api/roads',
   authorities: '/api/authorities',
-  officers: '/api/officers',
   health: '/actuator/health',
 } as const
 

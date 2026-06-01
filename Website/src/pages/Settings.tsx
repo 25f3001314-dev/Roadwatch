@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Bell, ExternalLink, Globe, Server, Shield, User2 } from 'lucide-react'
 import { fetchProfile, type AdminProfile } from '@/api/auth'
 import { fetchStats } from '@/api/complaints'
@@ -198,13 +199,13 @@ function Toggle({
 function ResourceLink({ href, label }: { href: string; label: string }) {
   return (
     <li>
-      <a
-        href={href}
+      <Link
+        to={href}
         className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
       >
         {label}
         <ExternalLink size={12} />
-      </a>
+      </Link>
     </li>
   )
 }

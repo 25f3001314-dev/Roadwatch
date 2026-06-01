@@ -11,9 +11,17 @@ export interface Authority {
   district?: string | null
 }
 
-export async function fetchAuthorities(): Promise<Authority[]> {
-  const { data } = await api.get<Authority[]>(API_ROUTES.authorities)
-  return data
+function normalize(data: unknown): Authority[] {
+  if (Array.isArray(data)) return data as Authority[]
+  if (Array.isArray((data as { content?: unknown } | null)?.content)) {
+    return ((data as { content: unknown[] }).content ?? []) as Authority[]
+  }
+  return []
+}
+
+export async function fetchAuthorities(params?: { department?: string; district?: string }): Promise<Authority[]> {
+  const { data } = await api.get<unknown>(API_ROUTES.authorities, { params })
+  return normalize(data)
 }
 
 export async function createAuthority(payload: Partial<Authority>): Promise<Authority> {

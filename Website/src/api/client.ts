@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { AUTH_STORAGE_KEY } from '@/constants/config'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://roadwatch-api.duckdns.org'
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -11,12 +11,10 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem(AUTH_STORAGE_KEY)
-  const headers = config.headers ? { ...(config.headers as Record<string, string>) } : {}
   if (token) {
-    headers.Authorization = `Bearer ${token}`
+    config.headers.set('Authorization', `Bearer ${token}`)
   }
-    headers["ngrok-skip-browser-warning"] = "1"
-  config.headers = headers as unknown as typeof config.headers
+  config.headers.set('ngrok-skip-browser-warning', '1')
   return config
 })
 

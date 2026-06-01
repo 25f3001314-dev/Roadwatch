@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, Edit2, Trash2, Search, Mail, Phone, MapPin } from 'lucide-react'
 import {
-  fetchOfficers,
-  createOfficer,
-  updateOfficer,
-  deleteOfficer,
-  type Officer,
-} from '@/api/officers'
+  fetchAuthorities as fetchOfficers,
+  createAuthority as createOfficer,
+  updateAuthority as updateOfficer,
+  deleteAuthority as deleteOfficer,
+  type Authority as Officer,
+} from '@/api/authorities'
 import { getApiErrorMessage } from '@/api/client'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { LoadingState } from '@/components/ui/LoadingState'
@@ -27,7 +27,7 @@ const EMPTY: Partial<Officer> = {
  *
  * Backed by GET/POST/PUT/DELETE /api/officers (alias of authorities).
  */
-export default function Roads() {
+export default function Officers() {
   const [officers, setOfficers] = useState<Officer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

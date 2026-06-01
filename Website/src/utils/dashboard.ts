@@ -13,6 +13,8 @@ export interface TrendPoint {
   pending: number
   assigned: number
   inProgress: number
+  accepted: number
+  forwarded: number
 }
 
 export interface DistributionPoint {
@@ -30,15 +32,19 @@ export interface DepartmentPerformancePoint {
 }
 
 const DISTRIBUTION_COLORS = ['#7c3aed', '#0ea5e9', '#14b8a6', '#f59e0b', '#f43f5e', '#8b5cf6', '#22c55e']
-const STATUS_ORDER = ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'] as const
+const STATUS_ORDER = ['PENDING', 'ACCEPTED', 'FORWARDED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'] as const
 const STATUS_LABELS: Record<(typeof STATUS_ORDER)[number], string> = {
   PENDING: 'Pending',
+  ACCEPTED: 'Accepted',
+  FORWARDED: 'Forwarded',
   ASSIGNED: 'Assigned',
   IN_PROGRESS: 'In progress',
   RESOLVED: 'Resolved',
 }
 const STATUS_COLORS: Record<(typeof STATUS_ORDER)[number], string> = {
   PENDING: '#eab308',
+  ACCEPTED: '#3b82f6',
+  FORWARDED: '#f97316',
   ASSIGNED: '#0ea5e9',
   IN_PROGRESS: '#8b5cf6',
   RESOLVED: '#16a34a',
@@ -111,6 +117,8 @@ export function buildDailyTrend(complaints: Complaint[], days = 7): TrendPoint[]
   const pendingByDate = new Map<string, number>()
   const assignedByDate = new Map<string, number>()
   const inProgressByDate = new Map<string, number>()
+  const acceptedByDate = new Map<string, number>()
+  const forwardedByDate = new Map<string, number>()
 
   complaints.forEach((complaint) => {
     const key = complaintDateKey(complaint.timestamp)
@@ -125,6 +133,12 @@ export function buildDailyTrend(complaints: Complaint[], days = 7): TrendPoint[]
         break
       case 'IN_PROGRESS':
         inProgressByDate.set(key, (inProgressByDate.get(key) || 0) + 1)
+        break
+      case 'ACCEPTED':
+        acceptedByDate.set(key, (acceptedByDate.get(key) || 0) + 1)
+        break
+      case 'FORWARDED':
+        forwardedByDate.set(key, (forwardedByDate.get(key) || 0) + 1)
         break
       default:
         pendingByDate.set(key, (pendingByDate.get(key) || 0) + 1)
@@ -146,6 +160,8 @@ export function buildDailyTrend(complaints: Complaint[], days = 7): TrendPoint[]
       pending: pendingByDate.get(key) || 0,
       assigned: assignedByDate.get(key) || 0,
       inProgress: inProgressByDate.get(key) || 0,
+      accepted: acceptedByDate.get(key) || 0,
+      forwarded: forwardedByDate.get(key) || 0,
     }
   })
 }
