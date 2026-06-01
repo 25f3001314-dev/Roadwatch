@@ -30,7 +30,6 @@ export default function ComplaintDetail() {
   const [adminNotes, setAdminNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
-
   const [authorities, setAuthorities] = useState<Authority[]>([])
   const [assignedAuthority, setAssignedAuthority] = useState<number | ''>('')
 
@@ -42,26 +41,17 @@ export default function ComplaintDetail() {
   }, [complaint])
 
   useEffect(() => {
-    if (!complaint || authorities.length === 0) {
-      return
-    }
-
-    const matchedAuthority = authorities.find((authority) => authority.name === complaint.department)
+    if (!complaint || authorities.length === 0) return
+    const matchedAuthority = authorities.find((a) => a.name === complaint.department)
     setAssignedAuthority(matchedAuthority?.id ?? '')
   }, [authorities, complaint])
 
   useEffect(() => {
     let mounted = true
     fetchAuthorities()
-      .then((list) => {
-        if (mounted) setAuthorities(list)
-      })
-      .catch(() => {
-        if (mounted) setAuthorities([])
-      })
-    return () => {
-      mounted = false
-    }
+      .then((list) => { if (mounted) setAuthorities(list) })
+      .catch(() => { if (mounted) setAuthorities([]) })
+    return () => { mounted = false }
   }, [])
 
   const [apiTimelineEntries, setApiTimelineEntries] = useState<ReturnType<typeof buildTimelineFromEvents>>([])
@@ -71,9 +61,7 @@ export default function ComplaintDetail() {
     let mounted = true
     fetchTimeline(complaintId)
       .then((data) => {
-        if (mounted && data.events?.length) {
-          setApiTimelineEntries(buildTimelineFromEvents(data.events))
-        }
+        if (mounted && data.events?.length) setApiTimelineEntries(buildTimelineFromEvents(data.events))
       })
       .catch(() => {})
     return () => { mounted = false }
@@ -97,190 +85,163 @@ export default function ComplaintDetail() {
   const allComplaints = Array.isArray(relatedState.data) ? relatedState.data : []
   const relatedComplaints = useMemo(() => {
     if (!complaint) return [] as Array<{ complaint: Complaint; reasons: string[] }>
-
     return allComplaints
-      .filter((candidate) => candidate.id !== complaint.id)
+      .filter((c) => c.id !== complaint.id)
       .map((candidate) => {
         const reasons: string[] = []
         let score = 0
-
-        if (candidate.department && complaint.department && candidate.department === complaint.department) {
-          reasons.push('same department')
-          score += 4
-        }
-        if (candidate.roadType && complaint.roadType && candidate.roadType === complaint.roadType) {
-          reasons.push('same road type')
-          score += 3
-        }
-        if (candidate.aiLabel && complaint.aiLabel && candidate.aiLabel === complaint.aiLabel) {
-          reasons.push('same AI label')
-          score += 2
-        }
-        if (candidate.severity === complaint.severity) {
-          reasons.push('matching severity')
-          score += 1
-        }
-        if (candidate.status === complaint.status) {
-          reasons.push('matching status')
-          score += 1
-        }
-
+        if (candidate.department && complaint.department && candidate.department === complaint.department) { reasons.push('same department'); score += 4 }
+        if (candidate.roadType && complaint.roadType && candidate.roadType === complaint.roadType) { reasons.push('same road type'); score += 3 }
+        if (candidate.aiLabel && complaint.aiLabel && candidate.aiLabel === complaint.aiLabel) { reasons.push('same AI label'); score += 2 }
+        if (candidate.severity === complaint.severity) { reasons.push('matching severity'); score += 1 }
+        if (candidate.status === complaint.status) { reasons.push('matching status'); score += 1 }
         return { complaint: candidate, reasons, score }
       })
-      .filter((entry) => entry.score > 0)
-      .sort((left, right) => right.score - left.score || new Date(right.complaint.timestamp).getTime() - new Date(left.complaint.timestamp).getTime())
+      .filter((e) => e.score > 0)
+      .sort((a, b) => b.score - a.score || new Date(b.complaint.timestamp).getTime() - new Date(a.complaint.timestamp).getTime())
       .slice(0, 4)
-      .map(({ complaint: relatedComplaint, reasons }) => ({ complaint: relatedComplaint, reasons }))
+      .map(({ complaint: rc, reasons }) => ({ complaint: rc, reasons }))
   }, [allComplaints, complaint])
 
   const timelineEntries = useMemo(
-    () =>
-      complaint
-        ? buildLiveComplaintTimeline({
-            timestamp: complaint.timestamp,
-            status: complaint.status,
-            department: complaint.department,
-            aiLabel: complaint.aiLabel,
-            aiConfidence: complaint.aiConfidence,
-            adminNotes: adminNotes,
-          })
-        : [],
+    () => complaint ? buildLiveComplaintTimeline({
+      timestamp: complaint.timestamp,
+      status: complaint.status,
+      department: complaint.department,
+      aiLabel: complaint.aiLabel,
+      aiConfidence: complaint.aiConfidence,
+      adminNotes,
+    }) : [],
     [adminNotes, complaint]
   )
 
-  const selectedAuthority = authorities.find((authority) => authority.id === assignedAuthority)
+  const selectedAuthority = authorities.find((a) => a.id === assignedAuthority)
   const hasEvidence = Boolean(complaint?.imageUrl || complaint?.aiProcessedImageUrl)
   const detections = complaint ? parseDetections(complaint.aiDetectionsJson) : []
 
   if (loading) return <LoadingState message="Loading complaint…" />
-  if (error || !complaint) {
-    return <ErrorState message={error || 'Complaint not found'} onRetry={reload} />
-  }
+  if (error || !complaint) return <ErrorState message={error || 'Complaint not found'} onRetry={reload} />
+
+  const cardGradient = "bg-gradient-to-b from-white to-slate-50/60"
 
   return (
-    <div className="space-y-6 pb-6">
-      <div className="flex flex-wrap items-start justify-between gap-4 rounded-[28px] border border-slate-200 bg-white/85 px-5 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)] backdrop-blur sm:px-6">
-        <div className="space-y-3">
-          <Link to="/complaints" className="text-sm font-medium text-brand-700 hover:underline">
+    <div className="space-y-4 pb-6">
+
+      {/* ── Header ── */}
+      <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-5 py-4 shadow-sm">
+        <div className="space-y-1">
+          <Link to="/complaints" className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
             ← Back to list
           </Link>
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-[2rem]">Complaint #{complaint.id}</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500">
-              Live investigation workspace for field complaint triage, routing, and resolution.
-            </p>
-          </div>
+          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">Complaint #{complaint.id}</h2>
+          <p className="text-sm text-slate-500">Live investigation workspace for field complaint triage, routing, and resolution.</p>
         </div>
-
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="status" value={complaint.status} />
           <Badge variant="severity" value={complaint.severity} />
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <span className="rounded-full border border-slate-200 bg-white shadow-sm px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
             {complaint.roadType || 'Unspecified road type'}
           </span>
         </div>
       </div>
 
+      {/* ── Save message ── */}
       {message && (
         <p className={`rounded-xl border px-4 py-3 text-sm ${message.includes('failed') ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`} role="status">
           {message}
         </p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Reported</p>
-          <p className="mt-2 text-sm font-semibold text-slate-950">{formatDate(complaint.timestamp)}</p>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">AI label</p>
-          <p className="mt-2 text-sm font-semibold text-slate-950">{complaint.aiLabel || 'Unclassified'}</p>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Confidence</p>
-          <p className="mt-2 text-sm font-semibold text-slate-950">{formatPercent(complaint.aiConfidence ?? undefined)}</p>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Location</p>
-          <p className="mt-2 text-sm font-semibold text-slate-950">{complaint.location ? 'Geo-tagged' : 'No coordinates captured'}</p>
-        </div>
+      {/* ── Stat cards ── */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: 'Reported', value: formatDate(complaint.timestamp), color: 'border-l-slate-400' },
+          { label: 'AI Label', value: complaint.aiLabel || 'Unclassified', color: 'border-l-blue-500' },
+          { label: 'Confidence', value: formatPercent(complaint.aiConfidence ?? undefined), color: 'border-l-emerald-500' },
+          { label: 'Location', value: complaint.location ? 'Geo-tagged' : 'No coordinates', color: 'border-l-amber-500' },
+        ].map((card) => (
+          <div key={card.label} className={`rounded-2xl border border-slate-200 ${cardGradient} p-4 shadow-sm transition-all duration-200 hover:shadow-md border-l-[3px] ${card.color}`}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{card.label}</p>
+            <p className="mt-1.5 text-sm font-semibold text-slate-950">{card.value}</p>
+          </div>
+        ))}
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-6 min-w-0 items-start">
-        <div className="space-y-6 min-w-0 xl:flex-[1.35]">
-          <DetailSection title="Complaint evidence" subtitle="Original media, YOLO output, and summary of the detected issue">
+      {/* ── Main 2-col layout ── */}
+      <div className="flex flex-col xl:flex-row gap-4 items-start">
+
+        {/* LEFT column */}
+        <div className="min-w-0 xl:flex-[1.4] space-y-4">
+
+          {/* Evidence */}
+          <DetailSection title="Complaint evidence" subtitle="Original media, YOLO output, and detected issue summary" className={`border-t-[3px] border-t-blue-500 ${cardGradient}`}>
             <div className="space-y-4">
-              <div className={`grid gap-4 ${complaint.aiProcessedImageUrl ? 'lg:grid-cols-2' : 'lg:grid-cols-1'}`}>
-                <figure className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50 shadow-sm">
-                  <div className="border-b border-slate-100 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Complaint image</p>
+              {/* Images row */}
+              <div className={`grid gap-3 ${complaint.aiProcessedImageUrl ? 'lg:grid-cols-2' : 'lg:grid-cols-1'}`}>
+                <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <div className="border-b border-slate-100 px-4 py-2.5">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Complaint image</p>
                   </div>
                   <img
                     src={imageSrc(complaint.imageUrl)}
                     alt={`Original complaint ${complaint.id}`}
-                    className="h-[340px] w-full object-contain bg-slate-50"
+                    className="h-72 w-full object-contain bg-slate-50"
                   />
                 </figure>
 
                 {complaint.aiProcessedImageUrl ? (
-                  <figure className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50 shadow-sm">
-                    <div className="border-b border-slate-100 px-4 py-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">AI processed image</p>
+                  <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="border-b border-slate-100 px-4 py-2.5">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">AI processed image</p>
                     </div>
                     <img
                       src={imageSrc(complaint.aiProcessedImageUrl)}
-                      alt={`AI processed complaint ${complaint.id}`}
-                      className="h-[340px] w-full object-contain bg-slate-50"
+                      alt={`AI processed ${complaint.id}`}
+                      className="h-72 w-full object-contain bg-slate-50"
                     />
                   </figure>
                 ) : (
-                  <DetailEmptyState
-                    title="No AI processed image"
-                    description="This complaint snapshot does not include a processed image from the current API payload."
-                  />
+                  <DetailEmptyState title="No AI processed image" description="No processed image from the AI pipeline for this complaint." />
                 )}
               </div>
 
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+              {/* YOLO + Metadata row */}
+              <div className="grid gap-3 xl:grid-cols-2">
+                {/* YOLO box */}
+                <div className={`rounded-2xl border border-slate-200 ${cardGradient} p-4 shadow-sm`}>
+                  <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">YOLO detection result</p>
+                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">YOLO detection</p>
                       <h3 className="mt-1 text-base font-semibold text-slate-950">{complaint.aiLabel || 'Unclassified'}</h3>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 border border-brand-100">
                         {formatPercent(complaint.aiConfidence ?? undefined)} confidence
                       </span>
                       <Badge variant="severity" value={complaint.severity} />
                     </div>
                   </div>
 
-                  <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
-                      <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Primary label</dt>
-                      <dd className="mt-1 text-sm font-semibold text-slate-950 capitalize">{complaint.aiLabel || 'None captured'}</dd>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
-                      <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Severity</dt>
-                      <dd className="mt-1"><Badge variant="severity" value={complaint.severity} /></dd>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
-                      <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Detected issue category</dt>
-                      <dd className="mt-1 text-sm font-semibold text-slate-950">{complaint.roadType || 'Unspecified'}</dd>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
-                      <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Confidence</dt>
-                      <dd className="mt-1 text-sm font-semibold text-slate-950">{formatPercent(complaint.aiConfidence ?? undefined)}</dd>
-                    </div>
+                  <dl className="grid gap-2 sm:grid-cols-2">
+                    {[
+                      { label: 'Primary label', value: complaint.aiLabel || 'None' },
+                      { label: 'Severity', value: <Badge variant="severity" value={complaint.severity} /> },
+                      { label: 'Issue category', value: complaint.roadType || 'Unspecified' },
+                      { label: 'Confidence', value: formatPercent(complaint.aiConfidence ?? undefined) },
+                    ].map((item) => (
+                      <div key={item.label} className="rounded-xl bg-white border border-slate-100 px-3 py-2.5 shadow-sm">
+                        <dt className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{item.label}</dt>
+                        <dd className="mt-0.5 text-sm font-semibold text-slate-950 capitalize">{item.value}</dd>
+                      </div>
+                    ))}
                   </dl>
 
                   {detections.length > 0 && (
-                    <div className="mt-4 rounded-[22px] border border-slate-100 bg-slate-50 px-4 py-3">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Detection breakdown</p>
-                      <div className="mt-3 space-y-2">
+                    <div className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-2">Detection breakdown</p>
+                      <div className="space-y-1.5">
                         {detections.map((d) => (
-                          <div key={`${d.label}-${d.confidence}`} className="flex items-center justify-between gap-4 rounded-xl bg-white px-3 py-2 text-sm">
+                          <div key={`${d.label}-${d.confidence}`} className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-100 px-3 py-2 text-sm">
                             <span className="capitalize text-slate-700">{d.rawLabel || d.label}</span>
                             <span className="font-semibold text-slate-950">{formatPercent(d.confidence)}</span>
                           </div>
@@ -290,39 +251,35 @@ export default function ComplaintDetail() {
                   )}
                 </div>
 
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Complaint metadata</p>
-                  <dl className="mt-4 grid gap-3">
-                    <div className="flex items-start justify-between gap-4 rounded-2xl bg-slate-50 px-3 py-2.5">
-                      <dt className="text-sm text-slate-500">Status</dt>
-                      <dd><Badge variant="status" value={complaint.status} /></dd>
-                    </div>
-                    <div className="flex items-start justify-between gap-4 rounded-2xl bg-slate-50 px-3 py-2.5">
-                      <dt className="text-sm text-slate-500">Department</dt>
-                      <dd className="text-sm font-semibold text-slate-950">{complaint.department || 'Unassigned'}</dd>
-                    </div>
-                    <div className="flex items-start justify-between gap-4 rounded-2xl bg-slate-50 px-3 py-2.5">
-                      <dt className="text-sm text-slate-500">Uploaded</dt>
-                      <dd className="text-sm font-semibold text-slate-950">{formatDate(complaint.timestamp)}</dd>
-                    </div>
-                    <div className="flex items-start justify-between gap-4 rounded-2xl bg-slate-50 px-3 py-2.5">
-                      <dt className="text-sm text-slate-500">Road type</dt>
-                      <dd className="text-sm font-semibold text-slate-950">{complaint.roadType || '—'}</dd>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
-                      <dt className="text-sm text-slate-500">Citizen note</dt>
-                      <dd className="mt-1 text-sm leading-6 text-slate-700">{complaint.description || 'No description provided in the current complaint snapshot.'}</dd>
+                {/* Metadata box */}
+                <div className={`rounded-2xl border border-slate-200 ${cardGradient} p-4 shadow-sm`}>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">Complaint metadata</p>
+                  <dl className="space-y-2">
+                    {[
+                      { label: 'Status', value: <Badge variant="status" value={complaint.status} /> },
+                      { label: 'Department', value: complaint.department || 'Unassigned' },
+                      { label: 'Uploaded', value: formatDate(complaint.timestamp) },
+                      { label: 'Road type', value: complaint.roadType || '—' },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center justify-between rounded-xl bg-white border border-slate-100 px-3 py-2 shadow-sm">
+                        <dt className="text-sm text-slate-500">{item.label}</dt>
+                        <dd className="text-sm font-semibold text-slate-950">{item.value}</dd>
+                      </div>
+                    ))}
+                    <div className="rounded-xl bg-white border border-slate-100 px-3 py-2 shadow-sm">
+                      <dt className="text-sm text-slate-500 mb-1">Citizen note</dt>
+                      <dd className="text-sm leading-6 text-slate-800">{complaint.description || 'No description provided.'}</dd>
                     </div>
                     {complaint.expectedRepairDate && (
-                      <div className="flex items-start justify-between gap-4 rounded-2xl bg-slate-50 px-3 py-2.5">
+                      <div className="flex items-center justify-between rounded-xl bg-white border border-slate-100 px-3 py-2 shadow-sm">
                         <dt className="text-sm text-slate-500">Expected repair</dt>
                         <dd className="text-sm font-semibold text-slate-950">{complaint.expectedRepairDate}</dd>
                       </div>
                     )}
                     {complaint.resolvedAt && (
-                      <div className="flex items-start justify-between gap-4 rounded-2xl bg-emerald-50 px-3 py-2.5">
-                        <dt className="text-sm text-emerald-600">Resolved at</dt>
-                        <dd className="text-sm font-semibold text-emerald-700">{formatDate(complaint.resolvedAt)}</dd>
+                      <div className="flex items-center justify-between rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-2 shadow-sm">
+                        <dt className="text-sm font-medium text-emerald-700">Resolved at</dt>
+                        <dd className="text-sm font-bold text-emerald-800">{formatDate(complaint.resolvedAt)}</dd>
                       </div>
                     )}
                   </dl>
@@ -331,81 +288,78 @@ export default function ComplaintDetail() {
             </div>
           </DetailSection>
 
-          <DetailSection title="Citizen location" subtitle="Geo-tagged complaint mapped to the current field coordinates">
+          {/* Map */}
+          <DetailSection title="Citizen location" subtitle="Geo-tagged complaint mapped to field coordinates" className={`border-t-[3px] border-t-emerald-500 ${cardGradient}`}>
             {complaint.location ? (
               <div className="space-y-3">
-                <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Coordinates</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-950">
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Coordinates</p>
+                  <p className="text-sm font-semibold text-slate-950">
                     {Number(complaint.location.latitude).toFixed(4)}, {Number(complaint.location.longitude).toFixed(4)}
                   </p>
                 </div>
-                <ComplaintMap complaints={[complaint]} height="400px" zoom={16} />
+                <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+                  <ComplaintMap complaints={[complaint]} height="550px" zoom={16} />
+                </div>
               </div>
             ) : (
-              <DetailEmptyState
-                title="No map location captured"
-                description="No coordinates in complaint payload; map cannot be rendered."
-              />
+              <DetailEmptyState title="No map location captured" description="No coordinates in complaint payload; map cannot be rendered." />
             )}
           </DetailSection>
         </div>
 
-        <div className="space-y-4 min-w-0 xl:w-[360px] xl:shrink-0 xl:sticky xl:top-6 xl:self-start">
-          <DetailSection title="Status tracker" subtitle="Live workflow progression derived from the current complaint state">
+        {/* RIGHT sidebar */}
+        <div className="min-w-0 xl:w-[350px] xl:shrink-0 xl:sticky xl:top-6 xl:self-start space-y-4">
+
+          {/* Status tracker */}
+          <DetailSection title="Status tracker" subtitle="Live workflow progression" className={`border-t-[3px] border-t-amber-500 ${cardGradient}`}>
             <ComplaintStatusTracker status={complaint.status} />
           </DetailSection>
 
-          <DetailSection title="Assignment panel" subtitle="Choose the department and authority responsible for this complaint">
-            <div className="space-y-4">
-              <div className="grid gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-sm text-slate-500">Current department</span>
+          {/* Assignment */}
+          <DetailSection title="Assignment panel" subtitle="Assign department and authority" className={`border-t-[3px] border-t-slate-500 ${cardGradient}`}>
+            <div className="space-y-3">
+              <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500">Department</span>
                   <span className="text-sm font-semibold text-slate-950">{complaint.department || 'Unassigned'}</span>
                 </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-sm text-slate-500">Selected authority</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500">Authority</span>
                   <span className="text-sm font-semibold text-slate-950">{selectedAuthority?.name || 'Not selected'}</span>
                 </div>
               </div>
 
-              <label className="block text-sm font-medium text-slate-700">Authority</label>
-              <select
-                value={assignedAuthority}
-                onChange={(e) => setAssignedAuthority(Number(e.target.value) || '')}
-                className="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
-              >
-                <option value="">— select authority —</option>
-                {authorities.map((authority) => (
-                  <option key={authority.id} value={authority.id}>
-                    {authority.name}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">Select Authority</label>
+                <select
+                  value={assignedAuthority}
+                  onChange={(e) => setAssignedAuthority(Number(e.target.value) || '')}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm bg-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 shadow-sm"
+                >
+                  <option value="">— select authority —</option>
+                  {authorities.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </div>
 
               {selectedAuthority ? (
-                <div className="rounded-[22px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Authority info</p>
-                  <div className="mt-3 space-y-2 text-sm text-slate-600">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-slate-500">Designation</span>
-                      <span className="font-medium text-slate-950">{selectedAuthority.designation || '—'}</span>
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm space-y-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Authority info</p>
+                  {[
+                    { label: 'Designation', value: selectedAuthority.designation || '—' },
+                    { label: 'Zone', value: selectedAuthority.zone || '—' },
+                    { label: 'District', value: selectedAuthority.district || '—' },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500">{item.label}</span>
+                      <span className="font-medium text-slate-950">{item.value}</span>
                     </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-slate-500">Zone</span>
-                      <span className="font-medium text-slate-950">{selectedAuthority.zone || '—'}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-slate-500">District</span>
-                      <span className="font-medium text-slate-950">{selectedAuthority.district || '—'}</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               ) : (
-                <DetailEmptyState
-                  title="No authority selected"
-                  description="Choose an authority to populate the assignment preview before saving the routing decision."
-                />
+                <DetailEmptyState title="No authority selected" description="Choose an authority to populate the assignment preview." />
               )}
 
               <button
@@ -413,42 +367,40 @@ export default function ComplaintDetail() {
                 disabled={saving || !assignedAuthority}
                 onClick={async () => {
                   if (!assignedAuthority) return
-                  const selected = authorities.find((authority) => authority.id === assignedAuthority)
+                  const selected = authorities.find((a) => a.id === assignedAuthority)
                   const success = await handlePatch({ department: selected?.name })
-                  if (success) {
-                    setDepartment(selected?.name || '')
-                  }
+                  if (success) setDepartment(selected?.name || '')
                 }}
-                className="inline-flex w-full items-center justify-center rounded-2xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Save assignment
               </button>
             </div>
           </DetailSection>
 
-          <DetailSection title="Admin notes" subtitle="Workspace notes stored in the current complaint record">
+          {/* Admin notes */}
+          <DetailSection title="Admin notes" subtitle="Workspace notes for this complaint" className={`border-t-[3px] border-t-slate-500 ${cardGradient}`}>
             <div className="space-y-3">
               <textarea
                 value={adminNotes}
-                onChange={(event) => setAdminNotes(event.target.value)}
-                rows={6}
-                placeholder="Add concise investigation notes, dispatch instructions, or closure context."
-                className="w-full rounded-2xl border border-slate-300 px-3 py-2.5 text-sm leading-6 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                onChange={(e) => setAdminNotes(e.target.value)}
+                rows={3}
+                placeholder="Add investigation notes..."
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm leading-6 text-slate-900 bg-white placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 shadow-sm"
               />
               <button
                 type="button"
                 disabled={saving}
-                onClick={async () => {
-                  await handlePatch({ adminNotes })
-                }}
-                className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-brand-200 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => handlePatch({ adminNotes })}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50"
               >
                 Save notes
               </button>
             </div>
           </DetailSection>
 
-          <DetailSection title="Action panel" subtitle="Approve, reject, or resolve this complaint">
+          {/* Action panel */}
+          <DetailSection title="Action panel" subtitle="Approve, reject, or resolve this complaint" className={`border-t-[3px] border-t-rose-500 ${cardGradient}`}>
             <ComplaintActionPanel
               complaint={complaint}
               department={department}
@@ -463,7 +415,8 @@ export default function ComplaintDetail() {
             />
           </DetailSection>
 
-          <DetailSection title="Forward to department" subtitle="Route accepted complaints to the responsible government department">
+          {/* Forward */}
+          <DetailSection title="Forward to department" subtitle="Route accepted complaints" className={`border-t-[3px] border-t-indigo-500 ${cardGradient}`}>
             <ComplaintForwardPanel
               complaint={complaint}
               onForwarded={(updated) => {
@@ -473,60 +426,62 @@ export default function ComplaintDetail() {
             />
           </DetailSection>
 
-          <DetailSection title="Complaint history" subtitle="Audit trail of all status changes and actions">
+          {/* History */}
+          <DetailSection title="Complaint history" subtitle="Audit trail of all status changes" className={`border-t-[3px] border-t-slate-400 ${cardGradient}`}>
             <ComplaintActivityTimeline
               entries={apiTimelineEntries.length ? apiTimelineEntries : timelineEntries}
               emptyTitle="No audit trail yet"
-              emptyDescription="Status changes and forwarding actions will appear here as the complaint progresses through the workflow."
+              emptyDescription="Status changes and actions will appear here."
             />
           </DetailSection>
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <DetailSection title="Related complaints" subtitle="Items with matching signals from the same live complaint feed">
+      {/* ── Bottom 3-col grid ── */}
+      <div className="grid gap-4 xl:grid-cols-3">
+        <DetailSection title="Related complaints" subtitle="Complaints with matching signals" className={`border-t-[3px] border-t-blue-400 ${cardGradient}`}>
           <RelatedComplaintsList
             complaints={relatedComplaints}
             emptyTitle="No related complaints found"
-            emptyDescription="No nearby complaint in the current dataset shares the same department, road type, severity, or AI label."
+            emptyDescription="No complaints share the same department, road type, severity, or AI label."
           />
         </DetailSection>
 
-        <DetailSection title="Recent activity" subtitle="Snapshot of the current complaint state and the latest workspace changes">
+        <DetailSection title="Recent activity" subtitle="Latest workspace changes" className={`border-t-[3px] border-t-slate-400 ${cardGradient}`}>
           <ComplaintActivityTimeline
             entries={timelineEntries.slice(0, 3)}
             emptyTitle="No recent activity"
-            emptyDescription="Once the complaint is routed or updated, the workspace snapshot will appear here."
+            emptyDescription="Once the complaint is routed, activity will appear here."
           />
         </DetailSection>
 
-        <DetailSection title="Resolution proof" subtitle="Before/after images and department resolution evidence">
-          <div className="space-y-4">
+        <DetailSection title="Resolution proof" subtitle="Before/after images and evidence" className={`border-t-[3px] border-t-emerald-500 ${cardGradient}`}>
+          <div className="space-y-3">
             {complaint.resolutionProofUrl ? (
-              <figure className="overflow-hidden rounded-[22px] border border-emerald-200 bg-emerald-50">
-                <img src={imageSrc(complaint.resolutionProofUrl)} alt="Resolution proof" className="h-44 w-full object-cover" />
-                <figcaption className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600">
+              <figure className="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
+                <img src={imageSrc(complaint.resolutionProofUrl)} alt="Resolution proof" className="h-40 w-full object-cover" />
+                <figcaption className="px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-emerald-600 border-t border-emerald-100">
                   Resolution proof (after repair)
                 </figcaption>
               </figure>
             ) : (
-              <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50/80 px-5 py-6 text-sm text-slate-500">
+              <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-5 text-sm text-slate-500 shadow-sm text-center">
                 <p className="font-semibold text-slate-900">No resolution proof uploaded</p>
-                <p className="mt-2 leading-6">Upload a photo showing the completed repair to close the transparency loop.</p>
+                <p className="mt-1 leading-6">Upload completed repair photo to close the loop.</p>
               </div>
             )}
             {hasEvidence && (
-              <figure className="overflow-hidden rounded-[22px] border border-slate-200 bg-slate-50">
-                <img src={imageSrc(complaint.imageUrl)} alt="Original complaint" className="h-44 w-full object-cover" />
-                <figcaption className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Original citizen upload (before)
+              <figure className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <img src={imageSrc(complaint.imageUrl)} alt="Original complaint" className="h-32 w-full object-cover" />
+                <figcaption className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 border-t border-slate-100">
+                  Original citizen upload
                 </figcaption>
               </figure>
             )}
             {complaint.departmentResponse && (
-              <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Department response</p>
-                <p className="mt-2 leading-6 text-slate-700">{complaint.departmentResponse}</p>
+              <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Department response</p>
+                <p className="mt-1.5 leading-6 text-slate-800">{complaint.departmentResponse}</p>
                 {complaint.departmentResponseDate && (
                   <p className="mt-1 text-xs text-slate-400">{formatDate(complaint.departmentResponseDate)}</p>
                 )}
