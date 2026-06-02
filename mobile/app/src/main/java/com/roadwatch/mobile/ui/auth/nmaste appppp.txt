@@ -1,0 +1,3 @@
+api.base.url=http://13.55.212.9:8080/api/   ? PURANA - GALAT!
+
+api.base.url=https://searched-exclusion-airplane-poll.trycloudflare.com/api/
