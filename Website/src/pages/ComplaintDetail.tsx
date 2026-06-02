@@ -119,7 +119,6 @@ export default function ComplaintDetail() {
   const hasEvidence = Boolean(complaint?.imageUrl || complaint?.aiProcessedImageUrl)
   const detections = complaint ? parseDetections(complaint.aiDetectionsJson) : []
   
-  // FIX: Properly check for location data even if it's flat on the complaint object
   const hasLocation = Boolean(complaint?.location || (complaint?.lat && complaint?.lng))
   const displayLat = complaint?.location ? complaint.location.latitude : complaint?.lat
   const displayLng = complaint?.location ? complaint.location.longitude : complaint?.lng
@@ -130,7 +129,7 @@ export default function ComplaintDetail() {
   const cardGradient = "bg-gradient-to-b from-white to-slate-50/60"
 
   return (
-    <div className="space-y-5 pb-8 max-w-[1600px] mx-auto">
+    <div className="space-y-6 pb-10 max-w-[1400px] mx-auto px-4 sm:px-6">
 
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
@@ -172,11 +171,11 @@ export default function ComplaintDetail() {
         ))}
       </div>
 
-      {/* ── Main Layout: Grid instead of Flex for better stability ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      {/* ── Main Layout: 12-Column Grid for Precise Width Calculation ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
 
-        {/* LEFT column (Takes 2/3 of the space on large screens) */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* LEFT column: takes 7/12 on large, 8/12 on extra-large screens */}
+        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
 
           {/* Evidence */}
           <DetailSection title="Complaint evidence" subtitle="Original media, YOLO output, and detected issue summary" className={`border-t-[3px] border-t-blue-500 ${cardGradient}`}>
@@ -190,7 +189,7 @@ export default function ComplaintDetail() {
                   <img
                     src={imageSrc(complaint.imageUrl)}
                     alt={`Original complaint ${complaint.id}`}
-                    className="h-80 w-full object-contain bg-slate-50"
+                    className="h-72 w-full object-contain bg-slate-50"
                   />
                 </figure>
 
@@ -202,7 +201,7 @@ export default function ComplaintDetail() {
                     <img
                       src={imageSrc(complaint.aiProcessedImageUrl)}
                       alt={`AI processed ${complaint.id}`}
-                      className="h-80 w-full object-contain bg-slate-50"
+                      className="h-72 w-full object-contain bg-slate-50"
                     />
                   </figure>
                 ) : (
@@ -303,8 +302,8 @@ export default function ComplaintDetail() {
                     {Number(displayLat).toFixed(4)}, {Number(displayLng).toFixed(4)}
                   </p>
                 </div>
-                {/* FIX: Reduced map height from 550px to a much cleaner 400px (h-96) */}
-                <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm h-96">
+                {/* STRICTLY FIXED MAP HEIGHT to 320px */}
+                <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm h-[320px]">
                   <ComplaintMap complaints={[complaint]} height="100%" zoom={16} />
                 </div>
               </div>
@@ -314,8 +313,8 @@ export default function ComplaintDetail() {
           </DetailSection>
         </div>
 
-        {/* RIGHT sidebar (Takes 1/3 of the space on large screens) */}
-        <div className="lg:col-span-1 lg:sticky lg:top-6 space-y-6">
+        {/* RIGHT sidebar: takes 5/12 on large, 4/12 on extra-large screens */}
+        <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-6 space-y-6">
 
           {/* Status tracker */}
           <DetailSection title="Status tracker" subtitle="Live workflow progression" className={`border-t-[3px] border-t-amber-500 ${cardGradient}`}>
@@ -443,7 +442,7 @@ export default function ComplaintDetail() {
         </div>
       </div>
 
-      {/* ── Bottom 3-col grid ── */}
+      {/* ── Bottom Grid (Unchanged blocks) ── */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <DetailSection title="Related complaints" subtitle="Complaints with matching signals" className={`border-t-[3px] border-t-blue-400 ${cardGradient}`}>
           <RelatedComplaintsList
