@@ -118,6 +118,11 @@ export default function ComplaintDetail() {
   const selectedAuthority = authorities.find((a) => a.id === assignedAuthority)
   const hasEvidence = Boolean(complaint?.imageUrl || complaint?.aiProcessedImageUrl)
   const detections = complaint ? parseDetections(complaint.aiDetectionsJson) : []
+  
+  // FIX: Properly check for location data even if it's flat on the complaint object
+  const hasLocation = Boolean(complaint?.location || (complaint?.lat && complaint?.lng))
+  const displayLat = complaint?.location ? complaint.location.latitude : complaint?.lat
+  const displayLng = complaint?.location ? complaint.location.longitude : complaint?.lng
 
   if (loading) return <LoadingState message="Loading complaint…" />
   if (error || !complaint) return <ErrorState message={error || 'Complaint not found'} onRetry={reload} />
@@ -125,21 +130,21 @@ export default function ComplaintDetail() {
   const cardGradient = "bg-gradient-to-b from-white to-slate-50/60"
 
   return (
-    <div className="space-y-4 pb-6">
+    <div className="space-y-5 pb-8 max-w-[1600px] mx-auto">
 
       {/* ── Header ── */}
-      <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-5 py-4 shadow-sm">
-        <div className="space-y-1">
-          <Link to="/complaints" className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
+        <div className="space-y-1.5">
+          <Link to="/complaints" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">
             ← Back to list
           </Link>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">Complaint #{complaint.id}</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-950">Complaint #{complaint.id}</h2>
           <p className="text-sm text-slate-500">Live investigation workspace for field complaint triage, routing, and resolution.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="status" value={complaint.status} />
           <Badge variant="severity" value={complaint.severity} />
-          <span className="rounded-full border border-slate-200 bg-white shadow-sm px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+          <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600">
             {complaint.roadType || 'Unspecified road type'}
           </span>
         </div>
@@ -147,57 +152,57 @@ export default function ComplaintDetail() {
 
       {/* ── Save message ── */}
       {message && (
-        <p className={`rounded-xl border px-4 py-3 text-sm ${message.includes('failed') ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`} role="status">
+        <p className={`rounded-xl border px-4 py-3 text-sm font-medium ${message.includes('failed') ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`} role="status">
           {message}
         </p>
       )}
 
       {/* ── Stat cards ── */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {[
           { label: 'Reported', value: formatDate(complaint.timestamp), color: 'border-l-slate-400' },
           { label: 'AI Label', value: complaint.aiLabel || 'Unclassified', color: 'border-l-blue-500' },
           { label: 'Confidence', value: formatPercent(complaint.aiConfidence ?? undefined), color: 'border-l-emerald-500' },
-          { label: 'Location', value: complaint.location ? 'Geo-tagged' : 'No coordinates', color: 'border-l-amber-500' },
+          { label: 'Location', value: hasLocation ? 'Geo-tagged' : 'No coordinates', color: 'border-l-amber-500' },
         ].map((card) => (
-          <div key={card.label} className={`rounded-2xl border border-slate-200 ${cardGradient} p-4 shadow-sm transition-all duration-200 hover:shadow-md border-l-[3px] ${card.color}`}>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{card.label}</p>
-            <p className="mt-1.5 text-sm font-semibold text-slate-950">{card.value}</p>
+          <div key={card.label} className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md border-l-[4px] ${card.color}`}>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">{card.label}</p>
+            <p className="mt-2 text-sm sm:text-base font-semibold text-slate-950 truncate">{card.value}</p>
           </div>
         ))}
       </div>
 
-      {/* ── Main 2-col layout ── */}
-      <div className="flex flex-col xl:flex-row gap-4 items-start">
+      {/* ── Main Layout: Grid instead of Flex for better stability ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-        {/* LEFT column */}
-        <div className="min-w-0 xl:flex-[1.4] space-y-4">
+        {/* LEFT column (Takes 2/3 of the space on large screens) */}
+        <div className="lg:col-span-2 space-y-6">
 
           {/* Evidence */}
           <DetailSection title="Complaint evidence" subtitle="Original media, YOLO output, and detected issue summary" className={`border-t-[3px] border-t-blue-500 ${cardGradient}`}>
-            <div className="space-y-4">
+            <div className="space-y-5">
               {/* Images row */}
-              <div className={`grid gap-3 ${complaint.aiProcessedImageUrl ? 'lg:grid-cols-2' : 'lg:grid-cols-1'}`}>
+              <div className={`grid gap-4 ${complaint.aiProcessedImageUrl ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
                 <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <div className="border-b border-slate-100 px-4 py-2.5">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Complaint image</p>
+                  <div className="border-b border-slate-100 px-4 py-3">
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Complaint image</p>
                   </div>
                   <img
                     src={imageSrc(complaint.imageUrl)}
                     alt={`Original complaint ${complaint.id}`}
-                    className="h-72 w-full object-contain bg-slate-50"
+                    className="h-80 w-full object-contain bg-slate-50"
                   />
                 </figure>
 
                 {complaint.aiProcessedImageUrl ? (
                   <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div className="border-b border-slate-100 px-4 py-2.5">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">AI processed image</p>
+                    <div className="border-b border-slate-100 px-4 py-3">
+                      <p className="text-xs font-bold uppercase tracking-widest text-slate-500">AI processed image</p>
                     </div>
                     <img
                       src={imageSrc(complaint.aiProcessedImageUrl)}
                       alt={`AI processed ${complaint.id}`}
-                      className="h-72 w-full object-contain bg-slate-50"
+                      className="h-80 w-full object-contain bg-slate-50"
                     />
                   </figure>
                 ) : (
@@ -206,44 +211,44 @@ export default function ComplaintDetail() {
               </div>
 
               {/* YOLO + Metadata row */}
-              <div className="grid gap-3 xl:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 {/* YOLO box */}
-                <div className={`rounded-2xl border border-slate-200 ${cardGradient} p-4 shadow-sm`}>
-                  <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-2 mb-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">YOLO detection</p>
-                      <h3 className="mt-1 text-base font-semibold text-slate-950">{complaint.aiLabel || 'Unclassified'}</h3>
+                      <p className="text-xs font-bold uppercase tracking-widest text-slate-500">YOLO detection</p>
+                      <h3 className="mt-1.5 text-lg font-bold text-slate-950">{complaint.aiLabel || 'Unclassified'}</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 border border-brand-100">
+                      <span className="rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 border border-brand-100">
                         {formatPercent(complaint.aiConfidence ?? undefined)} confidence
                       </span>
                       <Badge variant="severity" value={complaint.severity} />
                     </div>
                   </div>
 
-                  <dl className="grid gap-2 sm:grid-cols-2">
+                  <dl className="grid gap-3 grid-cols-2">
                     {[
                       { label: 'Primary label', value: complaint.aiLabel || 'None' },
                       { label: 'Severity', value: <Badge variant="severity" value={complaint.severity} /> },
                       { label: 'Issue category', value: complaint.roadType || 'Unspecified' },
                       { label: 'Confidence', value: formatPercent(complaint.aiConfidence ?? undefined) },
                     ].map((item) => (
-                      <div key={item.label} className="rounded-xl bg-white border border-slate-100 px-3 py-2.5 shadow-sm">
-                        <dt className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{item.label}</dt>
-                        <dd className="mt-0.5 text-sm font-semibold text-slate-950 capitalize">{item.value}</dd>
+                      <div key={item.label} className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
+                        <dt className="text-[11px] font-bold uppercase tracking-widest text-slate-500">{item.label}</dt>
+                        <dd className="mt-1 text-sm font-semibold text-slate-950 capitalize">{item.value}</dd>
                       </div>
                     ))}
                   </dl>
 
                   {detections.length > 0 && (
-                    <div className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-2">Detection breakdown</p>
-                      <div className="space-y-1.5">
+                    <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">Detection breakdown</p>
+                      <div className="space-y-2">
                         {detections.map((d) => (
-                          <div key={`${d.label}-${d.confidence}`} className="flex items-center justify-between rounded-lg bg-slate-50 border border-slate-100 px-3 py-2 text-sm">
-                            <span className="capitalize text-slate-700">{d.rawLabel || d.label}</span>
-                            <span className="font-semibold text-slate-950">{formatPercent(d.confidence)}</span>
+                          <div key={`${d.label}-${d.confidence}`} className="flex items-center justify-between rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm shadow-sm">
+                            <span className="capitalize font-medium text-slate-700">{d.rawLabel || d.label}</span>
+                            <span className="font-bold text-slate-950">{formatPercent(d.confidence)}</span>
                           </div>
                         ))}
                       </div>
@@ -252,33 +257,33 @@ export default function ComplaintDetail() {
                 </div>
 
                 {/* Metadata box */}
-                <div className={`rounded-2xl border border-slate-200 ${cardGradient} p-4 shadow-sm`}>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">Complaint metadata</p>
-                  <dl className="space-y-2">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Complaint metadata</p>
+                  <dl className="space-y-2.5">
                     {[
                       { label: 'Status', value: <Badge variant="status" value={complaint.status} /> },
                       { label: 'Department', value: complaint.department || 'Unassigned' },
                       { label: 'Uploaded', value: formatDate(complaint.timestamp) },
                       { label: 'Road type', value: complaint.roadType || '—' },
                     ].map((item) => (
-                      <div key={item.label} className="flex items-center justify-between rounded-xl bg-white border border-slate-100 px-3 py-2 shadow-sm">
-                        <dt className="text-sm text-slate-500">{item.label}</dt>
-                        <dd className="text-sm font-semibold text-slate-950">{item.value}</dd>
+                      <div key={item.label} className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
+                        <dt className="text-sm font-medium text-slate-600">{item.label}</dt>
+                        <dd className="text-sm font-bold text-slate-950">{item.value}</dd>
                       </div>
                     ))}
-                    <div className="rounded-xl bg-white border border-slate-100 px-3 py-2 shadow-sm">
-                      <dt className="text-sm text-slate-500 mb-1">Citizen note</dt>
-                      <dd className="text-sm leading-6 text-slate-800">{complaint.description || 'No description provided.'}</dd>
+                    <div className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
+                      <dt className="text-sm font-medium text-slate-600 mb-1.5">Citizen note</dt>
+                      <dd className="text-sm leading-relaxed text-slate-800">{complaint.description || 'No description provided.'}</dd>
                     </div>
                     {complaint.expectedRepairDate && (
-                      <div className="flex items-center justify-between rounded-xl bg-white border border-slate-100 px-3 py-2 shadow-sm">
-                        <dt className="text-sm text-slate-500">Expected repair</dt>
-                        <dd className="text-sm font-semibold text-slate-950">{complaint.expectedRepairDate}</dd>
+                      <div className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
+                        <dt className="text-sm font-medium text-slate-600">Expected repair</dt>
+                        <dd className="text-sm font-bold text-slate-950">{complaint.expectedRepairDate}</dd>
                       </div>
                     )}
                     {complaint.resolvedAt && (
-                      <div className="flex items-center justify-between rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-2 shadow-sm">
-                        <dt className="text-sm font-medium text-emerald-700">Resolved at</dt>
+                      <div className="flex items-center justify-between rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3">
+                        <dt className="text-sm font-semibold text-emerald-700">Resolved at</dt>
                         <dd className="text-sm font-bold text-emerald-800">{formatDate(complaint.resolvedAt)}</dd>
                       </div>
                     )}
@@ -290,16 +295,17 @@ export default function ComplaintDetail() {
 
           {/* Map */}
           <DetailSection title="Citizen location" subtitle="Geo-tagged complaint mapped to field coordinates" className={`border-t-[3px] border-t-emerald-500 ${cardGradient}`}>
-            {complaint.location ? (
-              <div className="space-y-3">
-                <div className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Coordinates</p>
-                  <p className="text-sm font-semibold text-slate-950">
-                    {Number(complaint.location.latitude).toFixed(4)}, {Number(complaint.location.longitude).toFixed(4)}
+            {hasLocation ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-slate-200 bg-white px-5 py-3 shadow-sm flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Coordinates</p>
+                  <p className="text-sm font-bold text-slate-950">
+                    {Number(displayLat).toFixed(4)}, {Number(displayLng).toFixed(4)}
                   </p>
                 </div>
-                <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
-                  <ComplaintMap complaints={[complaint]} height="550px" zoom={16} />
+                {/* FIX: Reduced map height from 550px to a much cleaner 400px (h-96) */}
+                <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm h-96">
+                  <ComplaintMap complaints={[complaint]} height="100%" zoom={16} />
                 </div>
               </div>
             ) : (
@@ -308,8 +314,8 @@ export default function ComplaintDetail() {
           </DetailSection>
         </div>
 
-        {/* RIGHT sidebar */}
-        <div className="min-w-0 xl:w-[350px] xl:shrink-0 xl:sticky xl:top-6 xl:self-start space-y-4">
+        {/* RIGHT sidebar (Takes 1/3 of the space on large screens) */}
+        <div className="lg:col-span-1 lg:sticky lg:top-6 space-y-6">
 
           {/* Status tracker */}
           <DetailSection title="Status tracker" subtitle="Live workflow progression" className={`border-t-[3px] border-t-amber-500 ${cardGradient}`}>
@@ -318,24 +324,24 @@ export default function ComplaintDetail() {
 
           {/* Assignment */}
           <DetailSection title="Assignment panel" subtitle="Assign department and authority" className={`border-t-[3px] border-t-slate-500 ${cardGradient}`}>
-            <div className="space-y-3">
-              <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm space-y-2">
+            <div className="space-y-4">
+              <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Department</span>
-                  <span className="text-sm font-semibold text-slate-950">{complaint.department || 'Unassigned'}</span>
+                  <span className="text-sm font-medium text-slate-500">Department</span>
+                  <span className="text-sm font-bold text-slate-950">{complaint.department || 'Unassigned'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Authority</span>
-                  <span className="text-sm font-semibold text-slate-950">{selectedAuthority?.name || 'Not selected'}</span>
+                  <span className="text-sm font-medium text-slate-500">Authority</span>
+                  <span className="text-sm font-bold text-slate-950">{selectedAuthority?.name || 'Not selected'}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">Select Authority</label>
+                <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Select Authority</label>
                 <select
                   value={assignedAuthority}
                   onChange={(e) => setAssignedAuthority(Number(e.target.value) || '')}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm bg-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 shadow-sm"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium bg-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 shadow-sm"
                 >
                   <option value="">— select authority —</option>
                   {authorities.map((a) => (
@@ -345,16 +351,16 @@ export default function ComplaintDetail() {
               </div>
 
               {selectedAuthority ? (
-                <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm space-y-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Authority info</p>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 space-y-3">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-1">Authority info</p>
                   {[
                     { label: 'Designation', value: selectedAuthority.designation || '—' },
                     { label: 'Zone', value: selectedAuthority.zone || '—' },
                     { label: 'District', value: selectedAuthority.district || '—' },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-500">{item.label}</span>
-                      <span className="font-medium text-slate-950">{item.value}</span>
+                      <span className="font-medium text-slate-600">{item.label}</span>
+                      <span className="font-bold text-slate-950">{item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -371,7 +377,7 @@ export default function ComplaintDetail() {
                   const success = await handlePatch({ department: selected?.name })
                   if (success) setDepartment(selected?.name || '')
                 }}
-                className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Save assignment
               </button>
@@ -384,15 +390,15 @@ export default function ComplaintDetail() {
               <textarea
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
-                rows={3}
+                rows={4}
                 placeholder="Add investigation notes..."
-                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm leading-6 text-slate-900 bg-white placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 shadow-sm"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium leading-relaxed text-slate-900 bg-white placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 shadow-sm"
               />
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => handlePatch({ adminNotes })}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
               >
                 Save notes
               </button>
@@ -438,7 +444,7 @@ export default function ComplaintDetail() {
       </div>
 
       {/* ── Bottom 3-col grid ── */}
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <DetailSection title="Related complaints" subtitle="Complaints with matching signals" className={`border-t-[3px] border-t-blue-400 ${cardGradient}`}>
           <RelatedComplaintsList
             complaints={relatedComplaints}
@@ -456,34 +462,34 @@ export default function ComplaintDetail() {
         </DetailSection>
 
         <DetailSection title="Resolution proof" subtitle="Before/after images and evidence" className={`border-t-[3px] border-t-emerald-500 ${cardGradient}`}>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {complaint.resolutionProofUrl ? (
-              <figure className="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
-                <img src={imageSrc(complaint.resolutionProofUrl)} alt="Resolution proof" className="h-40 w-full object-cover" />
-                <figcaption className="px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-emerald-600 border-t border-emerald-100">
+              <figure className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+                <img src={imageSrc(complaint.resolutionProofUrl)} alt="Resolution proof" className="h-48 w-full object-cover" />
+                <figcaption className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 border-t border-emerald-100">
                   Resolution proof (after repair)
                 </figcaption>
               </figure>
             ) : (
-              <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-5 text-sm text-slate-500 shadow-sm text-center">
-                <p className="font-semibold text-slate-900">No resolution proof uploaded</p>
-                <p className="mt-1 leading-6">Upload completed repair photo to close the loop.</p>
+              <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm text-slate-500 shadow-sm text-center">
+                <p className="font-bold text-slate-900">No resolution proof uploaded</p>
+                <p className="mt-1.5 leading-relaxed">Upload completed repair photo to close the loop.</p>
               </div>
             )}
             {hasEvidence && (
-              <figure className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                <img src={imageSrc(complaint.imageUrl)} alt="Original complaint" className="h-32 w-full object-cover" />
-                <figcaption className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 border-t border-slate-100">
+              <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <img src={imageSrc(complaint.imageUrl)} alt="Original complaint" className="h-40 w-full object-cover" />
+                <figcaption className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 bg-slate-50 border-t border-slate-100">
                   Original citizen upload
                 </figcaption>
               </figure>
             )}
             {complaint.departmentResponse && (
-              <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Department response</p>
-                <p className="mt-1.5 leading-6 text-slate-800">{complaint.departmentResponse}</p>
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Department response</p>
+                <p className="mt-2 text-sm font-medium leading-relaxed text-slate-800">{complaint.departmentResponse}</p>
                 {complaint.departmentResponseDate && (
-                  <p className="mt-1 text-xs text-slate-400">{formatDate(complaint.departmentResponseDate)}</p>
+                  <p className="mt-2 text-xs font-semibold text-slate-400">{formatDate(complaint.departmentResponseDate)}</p>
                 )}
               </div>
             )}
