@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { imageSrc } from '@/api/client'
-import { ComplaintMap } from '@/components/map/ComplaintMap'
 import { Badge } from '@/components/ui/Badge'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { LoadingState } from '@/components/ui/LoadingState'
@@ -116,13 +115,8 @@ export default function ComplaintDetail() {
   )
 
   const selectedAuthority = authorities.find((a) => a.id === assignedAuthority)
-  const hasEvidence = Boolean(complaint?.imageUrl || complaint?.aiProcessedImageUrl)
   const detections = complaint ? parseDetections(complaint.aiDetectionsJson) : []
   
-  const hasLocation = Boolean(complaint?.location || (complaint?.lat && complaint?.lng))
-  const displayLat = complaint?.location ? complaint.location.latitude : complaint?.lat
-  const displayLng = complaint?.location ? complaint.location.longitude : complaint?.lng
-
   if (loading) return <LoadingState message="Loading complaint…" />
   if (error || !complaint) return <ErrorState message={error || 'Complaint not found'} onRetry={reload} />
 
@@ -162,7 +156,7 @@ export default function ComplaintDetail() {
           { label: 'Reported', value: formatDate(complaint.timestamp), color: 'border-l-slate-400' },
           { label: 'AI Label', value: complaint.aiLabel || 'Unclassified', color: 'border-l-blue-500' },
           { label: 'Confidence', value: formatPercent(complaint.aiConfidence ?? undefined), color: 'border-l-emerald-500' },
-          { label: 'Location', value: hasLocation ? 'Geo-tagged' : 'No coordinates', color: 'border-l-amber-500' },
+          { label: 'Location', value: Boolean(complaint?.location || (complaint?.lat && complaint?.lng)) ? 'Geo-tagged' : 'No coordinates', color: 'border-l-amber-500' },
         ].map((card) => (
           <div key={card.label} className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md border-l-[4px] ${card.color}`}>
             <p className="text-xs font-bold uppercase tracking-widest text-slate-500">{card.label}</p>
@@ -171,7 +165,7 @@ export default function ComplaintDetail() {
         ))}
       </div>
 
-      {/* ── Main Layout: 12-Column Grid for Precise Width Calculation ── */}
+      {/* ── Main Layout: 12-Column Grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
 
         {/* LEFT column: takes 7/12 on large, 8/12 on extra-large screens */}
@@ -290,26 +284,6 @@ export default function ComplaintDetail() {
                 </div>
               </div>
             </div>
-          </DetailSection>
-
-          {/* Map */}
-          <DetailSection title="Citizen location" subtitle="Geo-tagged complaint mapped to field coordinates" className={`border-t-[3px] border-t-emerald-500 ${cardGradient}`}>
-            {hasLocation ? (
-              <div className="space-y-4">
-                <div className="rounded-xl border border-slate-200 bg-white px-5 py-3 shadow-sm flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Coordinates</p>
-                  <p className="text-sm font-bold text-slate-950">
-                    {Number(displayLat).toFixed(4)}, {Number(displayLng).toFixed(4)}
-                  </p>
-                </div>
-                {/* STRICTLY FIXED MAP HEIGHT to 320px */}
-                <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm h-[320px]">
-                  <ComplaintMap complaints={[complaint]} height="100%" zoom={16} />
-                </div>
-              </div>
-            ) : (
-              <DetailEmptyState title="No map location captured" description="No coordinates in complaint payload; map cannot be rendered." />
-            )}
           </DetailSection>
         </div>
 
@@ -442,8 +416,8 @@ export default function ComplaintDetail() {
         </div>
       </div>
 
-      {/* ── Bottom Grid (Unchanged blocks) ── */}
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {/* ── Bottom Grid (Now 2 columns perfectly balanced) ── */}
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         <DetailSection title="Related complaints" subtitle="Complaints with matching signals" className={`border-t-[3px] border-t-blue-400 ${cardGradient}`}>
           <RelatedComplaintsList
             complaints={relatedComplaints}
@@ -458,41 +432,6 @@ export default function ComplaintDetail() {
             emptyTitle="No recent activity"
             emptyDescription="Once the complaint is routed, activity will appear here."
           />
-        </DetailSection>
-
-        <DetailSection title="Resolution proof" subtitle="Before/after images and evidence" className={`border-t-[3px] border-t-emerald-500 ${cardGradient}`}>
-          <div className="space-y-4">
-            {complaint.resolutionProofUrl ? (
-              <figure className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
-                <img src={imageSrc(complaint.resolutionProofUrl)} alt="Resolution proof" className="h-48 w-full object-cover" />
-                <figcaption className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 border-t border-emerald-100">
-                  Resolution proof (after repair)
-                </figcaption>
-              </figure>
-            ) : (
-              <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm text-slate-500 shadow-sm text-center">
-                <p className="font-bold text-slate-900">No resolution proof uploaded</p>
-                <p className="mt-1.5 leading-relaxed">Upload completed repair photo to close the loop.</p>
-              </div>
-            )}
-            {hasEvidence && (
-              <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <img src={imageSrc(complaint.imageUrl)} alt="Original complaint" className="h-40 w-full object-cover" />
-                <figcaption className="px-5 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 bg-slate-50 border-t border-slate-100">
-                  Original citizen upload
-                </figcaption>
-              </figure>
-            )}
-            {complaint.departmentResponse && (
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Department response</p>
-                <p className="mt-2 text-sm font-medium leading-relaxed text-slate-800">{complaint.departmentResponse}</p>
-                {complaint.departmentResponseDate && (
-                  <p className="mt-2 text-xs font-semibold text-slate-400">{formatDate(complaint.departmentResponseDate)}</p>
-                )}
-              </div>
-            )}
-          </div>
         </DetailSection>
       </div>
     </div>
