@@ -1,12 +1,21 @@
 {
-  "rewrites": [
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "cd Website && npm run build",
+  "outputDirectory": "Website/dist",
+  "installCommand": "cd Website && npm install --no-audit --no-fund",
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "https://roadwatch-api.duckdns.org/api/:path*"
+      "src": "/api/(.*)",
+      "dest": "https://roadwatch-api.duckdns.org/api/$1"
     },
     {
-      "source": "/actuator/:path*",
-      "destination": "https://roadwatch-api.duckdns.org/actuator/:path*"
+      "src": "/actuator/(.*)",
+      "dest": "https://roadwatch-api.duckdns.org/actuator/$1"
+    },
+    {
+      "src": "/((?!api|actuator|assets|_next)[^.]*)",
+      "dest": "/index.html"
     }
   ]
 }
