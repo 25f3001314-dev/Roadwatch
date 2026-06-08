@@ -232,7 +232,7 @@ export default function Dashboard() {
         <DashboardSection
           className="xl:col-span-8"
           title="Complaint trend"
-          subtitle="Live arrivals over the last 7 days"
+          subtitle="Live arrivals over the last 30 days"
         >
           <TrendLineChart
             data={trendData}

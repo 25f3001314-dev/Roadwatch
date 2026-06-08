@@ -156,7 +156,7 @@ export default function ComplaintDetail() {
           { label: 'Reported', value: formatDate(complaint.timestamp), color: 'border-l-slate-400' },
           { label: 'AI Label', value: complaint.aiLabel || 'Unclassified', color: 'border-l-blue-500' },
           { label: 'Confidence', value: formatPercent(complaint.aiConfidence ?? undefined), color: 'border-l-emerald-500' },
-          { label: 'Location', value: Boolean(complaint?.location || (complaint?.lat && complaint?.lng)) ? 'Geo-tagged' : 'No coordinates', color: 'border-l-amber-500' },
+          { label: 'Location', value: Boolean(complaint?.location?.latitude && complaint?.location?.longitude) ? 'Geo-tagged' : 'No coordinates', color: 'border-l-amber-500' },
         ].map((card) => (
           <div key={card.label} className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md border-l-[4px] ${card.color}`}>
             <p className="text-xs font-bold uppercase tracking-widest text-slate-500">{card.label}</p>
