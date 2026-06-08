@@ -288,22 +288,16 @@ export default function ComplaintDetail() {
           </DetailSection>
         {/* Map */}
           {complaint.location?.latitude && complaint.location?.longitude ? (
-            <DetailSection title="Location map" subtitle="Geotagged complaint location" className="border-t-[3px] border-t-teal-500">
-              <div className="rounded-xl overflow-hidden" style={{ height: '320px' }}>
+            <DetailSection title="Location map" subtitle="Geotagged complaint location" className="border-t-[3px] border-t-teal-500 !pb-0">
+              <div className="rounded-xl overflow-hidden -mx-5 -mb-5" style={{ height: '260px' }}>
                 <ComplaintMap
                   complaints={[complaint]}
-                  height="320px"
+                  height="260px"
                   zoom={15}
                 />
               </div>
             </DetailSection>
-          ) : (
-            <DetailSection title="Location map" subtitle="No coordinates available" className="border-t-[3px] border-t-slate-300">
-              <div className="flex items-center justify-center h-32 text-slate-400 text-sm font-medium">
-                📍 No GPS coordinates for this complaint
-              </div>
-            </DetailSection>
-          )}
+          ) : null}
         </div>
 
         {/* RIGHT sidebar: takes 5/12 on large, 4/12 on extra-large screens */}
