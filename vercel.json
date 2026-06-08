@@ -6,7 +6,7 @@
     },
     {
       "source": "/actuator/:path*",
-      "destination": "http://13.55.212.9:8080/actuator/:path*"
+      "destination": "https://roadwatch-api.duckdns.org/actuator/:path*"
     }
   ]
 }
