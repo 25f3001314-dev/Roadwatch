@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -111,6 +112,7 @@ public class CitizenComplaintController {
     /**
      * POST /api/citizen/me/notifications/mark-read — mark all as read.
      */
+    @Transactional
     @PostMapping("/me/notifications/mark-read")
     public ResponseEntity<?> markAllRead(@RequestHeader("Authorization") String auth) {
         Long userId = extractCitizenId(auth);

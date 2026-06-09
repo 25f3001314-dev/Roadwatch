@@ -4,6 +4,7 @@ import com.roadwatch.backend.dto.ComplaintStatsDto;
 import com.roadwatch.backend.dto.ComplaintUpdateRequest;
 import com.roadwatch.backend.models.Complaint;
 import com.roadwatch.backend.services.ComplaintService;
+import com.roadwatch.backend.services.JwtService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public class ComplaintController {
 
     @Autowired
     private ComplaintService complaintService;
+
+    @Autowired
+    private JwtService jwtService;
 
     @GetMapping
     public Page<Complaint> listComplaints(
@@ -60,9 +64,29 @@ public class ComplaintController {
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<Complaint> createComplaint(
             @ModelAttribute Complaint complaint,
-            @RequestParam("image") MultipartFile image) {
+            @RequestParam("image") MultipartFile image,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        Long citizenId = extractCitizenUserId(authHeader);
+        if (citizenId != null) {
+            complaint.setUserId(citizenId);
+            logger.debug("Linking complaint to citizen userId={}", citizenId);
+        }
         Complaint saved = complaintService.createComplaint(complaint, image);
         return ResponseEntity.ok(saved);
+    }
+
+    private Long extractCitizenUserId(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
+        try {
+            String token = authHeader.substring(7);
+            if (!jwtService.isValid(token)) return null;
+            String subject = jwtService.extractUsername(token);
+            if (subject != null && subject.startsWith("citizen:")) {
+                return Long.parseLong(subject.substring(8));
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
     @PatchMapping("/{id}")
