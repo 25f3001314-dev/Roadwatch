@@ -100,14 +100,9 @@ export default function ComplaintDetail() {
       await update(payload)
       setMessage('Saved successfully')
       return true
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      if (msg && !msg.includes('reload')) {
-        setMessage('Update failed')
-        return false
-      }
-      setMessage('Saved successfully')
-      return true
+    } catch {
+//       setMessage('Update failed')
+      return false
     } finally { setSaving(false) }
   }
 
