@@ -70,6 +70,6 @@ export async function fetchTimeline(id: number): Promise<{
   complaint: Complaint
   events: import('@/types/complaint').TimelineEvent[]
 }> {
-  const { data } = await api.get(`${API_ROUTES.complaints}/${id}/timeline`)
+  const { data } = await api.get(`/api/citizen/me/complaints/${id}/timeline`)
   return data
 }

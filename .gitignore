@@ -68,3 +68,4 @@ __pycache__/
 FETCH_HEAD
 Website/.env
 Website/.env
+.vercel
