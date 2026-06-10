@@ -206,10 +206,10 @@ export default function ComplaintDetail() {
 
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
             <DetailSection title="Related complaints" className={`border-t-[3px] border-t-blue-400 ${cg}`}>
-              <RelatedComplaintsList complaints={relatedComplaints} />
+              <RelatedComplaintsList complaints={relatedComplaints} emptyTitle="No related complaints" emptyDescription="No matching complaints found." />
             </DetailSection>
             <DetailSection title="Recent activity" className={`border-t-[3px] border-t-slate-400 ${cg}`}>
-              <ComplaintActivityTimeline entries={timelineEntries.slice(0, 4)} />
+              <ComplaintActivityTimeline entries={timelineEntries.slice(0, 4)} emptyTitle="No recent activity" emptyDescription="Actions will appear here." />
             </DetailSection>
           </div>
         </div>
