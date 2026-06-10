@@ -520,6 +520,8 @@ export default function ComplaintDetail() {
 
       <ResolutionModal 
         isOpen={isResolveModalOpen} 
+        complaintLat={complaint?.location?.latitude}
+        complaintLng={complaint?.location?.longitude}
         onClose={() => setIsResolveModalOpen(false)} 
         onConfirm={async (photoUrl) => {
           const ok = await handlePatch({ status: "RESOLVED", resolutionPhoto: photoUrl });
