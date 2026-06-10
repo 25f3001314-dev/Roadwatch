@@ -14,6 +14,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.roadwatch.backend.dto.ResolutionProofRequest;
+import com.roadwatch.backend.dto.ResolutionVerificationResult;
+import com.roadwatch.backend.services.ResolutionVerificationService;
 
 import java.util.List;
 
@@ -24,6 +27,9 @@ public class ComplaintController {
 
     @Autowired
     private ComplaintService complaintService;
+
+    @Autowired
+    private ResolutionVerificationService resolutionVerificationService;
 
     @GetMapping
     public Page<Complaint> listComplaints(
@@ -117,11 +123,19 @@ public class ComplaintController {
         return ResponseEntity.ok(forwarded);
     }
 
-    @PostMapping("/{id}/resolution-proof")
-    public ResponseEntity<Complaint> uploadResolutionProof(
+    @PostMapping(value = "/{id}/resolution-proof", consumes = {"multipart/form-data"})
+    public ResponseEntity<ResolutionVerificationResult> submitResolutionProof(
             @PathVariable Long id,
-            @RequestParam("image") MultipartFile image) {
-        Complaint updated = complaintService.uploadResolutionProof(id, image);
-        return ResponseEntity.ok(updated);
+            @RequestParam("image") MultipartFile image,
+            @RequestParam("officerLat") Double officerLat,
+            @RequestParam("officerLng") Double officerLng,
+            @RequestParam("photoTimestampMs") Long photoTimestampMs) {
+        ResolutionProofRequest req = new ResolutionProofRequest();
+        req.setOfficerLat(officerLat);
+        req.setOfficerLng(officerLng);
+        req.setPhotoTimestampMs(photoTimestampMs);
+        ResolutionVerificationResult result = resolutionVerificationService.verifyAndResolve(id, image, req);
+        if (result.isResolved()) return ResponseEntity.ok(result);
+        return ResponseEntity.unprocessableEntity().body(result);
     }
 }
