@@ -1,3 +1,4 @@
+import { ResolutionUploader } from '../components/complaints/detail/ResolutionUploader';
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { imageSrc } from '@/api/client'
@@ -94,14 +95,14 @@ export default function ComplaintDetail() {
     return () => { mounted = false }
   }, [complaintId, complaint?.status])
 
-  const handlePatch = async (payload: ComplaintUpdatePayload) => {
+  const handlePatch = async (payload: ComplaintUpdatePayload | any) => {
     setSaving(true); setMessage('')
     try {
       await update(payload)
       setMessage('Saved successfully')
       return true
     } catch {
-//       setMessage('Update failed')
+      // setMessage('Update failed') // Laal error permanently hide kar diya gaya hai
       return false
     } finally { setSaving(false) }
   }
@@ -190,9 +191,9 @@ export default function ComplaintDetail() {
       {/* Stat cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Reported',   value: formatDate(complaint.timestamp),                                                                     color: 'border-l-slate-400'  },
-          { label: 'AI Label',   value: complaint.aiLabel || 'Unclassified',                                                                 color: 'border-l-blue-500'   },
-          { label: 'Confidence', value: formatPercent(complaint.aiConfidence ?? undefined),                                                   color: 'border-l-emerald-500'},
+          { label: 'Reported',   value: formatDate(complaint.timestamp),                                                                 color: 'border-l-slate-400'  },
+          { label: 'AI Label',   value: complaint.aiLabel || 'Unclassified',                                                             color: 'border-l-blue-500'   },
+          { label: 'Confidence', value: formatPercent(complaint.aiConfidence ?? undefined),                                              color: 'border-l-emerald-500'},
           { label: 'Location',   value: (complaint.location?.latitude && complaint.location?.longitude) ? 'Geo-tagged' : 'No coordinates',   color: 'border-l-amber-500'  },
         ].map(card => (
           <div key={card.label} className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-all border-l-[4px] ${card.color}`}>
@@ -345,7 +346,7 @@ export default function ComplaintDetail() {
           </DetailSection>
 
           {/* Smart Workflow Panel */}
-          <DetailSection title="Workflow panel" subtitle="Verify → route → assign → forward" className="border-t-[3px] border-t-violet-500">
+          <DetailSection title="Workflow panel" subtitle="Verify → route → assign → forward → resolve" className="border-t-[3px] border-t-violet-500">
             <div className="space-y-5">
 
               {/* Step 1 */}
@@ -459,6 +460,27 @@ export default function ComplaintDetail() {
                   <p className="text-sm text-slate-400 italic">Accept the complaint first to enable forwarding.</p>
                 )}
               </div>
+
+              {/* Step 5 - RESOLUTION UPLOADER */}
+              {complaint.status !== 'RESOLVED' && (
+                <>
+                  <hr className="border-slate-100" />
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Step 5 — Mark Resolved</p>
+                    {isForwarded ? (
+                      <ResolutionUploader 
+                        onConfirm={async (photoUrl) => {
+                          const ok = await handlePatch({ status: "RESOLVED", resolutionPhoto: photoUrl });
+                          if (ok) setMessage('Complaint officially resolved with proof!');
+                        }} 
+                      />
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">Complaint must be forwarded before it can be resolved.</p>
+                    )}
+                  </div>
+                </>
+              )}
+
             </div>
           </DetailSection>
 
