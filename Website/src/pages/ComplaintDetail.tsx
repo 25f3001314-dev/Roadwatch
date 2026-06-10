@@ -1,4 +1,5 @@
-import { ResolutionUploader } from '../components/complaints/detail/ResolutionUploader';
+import { ResolutionModal } from '../components/complaints/detail/ResolutionModal';
+
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { imageSrc } from '@/api/client'
@@ -55,6 +56,7 @@ export default function ComplaintDetail() {
   const [selectedAuthority, setSelectedAuthority]   = useState<number | ''>('')
   const [forwardReason, setForwardReason]           = useState('')
   const [forwarding, setForwarding]                 = useState(false)
+  const [isResolveModalOpen, setIsResolveModalOpen] = useState(false)
 
   useEffect(() => {
     if (!complaint) return
@@ -461,19 +463,19 @@ export default function ComplaintDetail() {
                 )}
               </div>
 
-              {/* Step 5 - RESOLUTION UPLOADER */}
+              {/* Step 5 - RESOLUTION MODAL TRIGGER */}
               {complaint.status !== 'RESOLVED' && (
                 <>
                   <hr className="border-slate-100" />
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Step 5 — Mark Resolved</p>
                     {isForwarded ? (
-                      <ResolutionUploader 
-                        onConfirm={async (photoUrl) => {
-                          const ok = await handlePatch({ status: "RESOLVED", resolutionPhoto: photoUrl });
-                          if (ok) setMessage('Complaint officially resolved with proof!');
-                        }} 
-                      />
+                      <button
+                        onClick={() => setIsResolveModalOpen(true)}
+                        className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                      >
+                        Verify Final Proof & Resolve
+                      </button>
                     ) : (
                       <p className="text-sm text-slate-400 italic">Complaint must be forwarded before it can be resolved.</p>
                     )}
@@ -515,6 +517,15 @@ export default function ComplaintDetail() {
           </DetailSection>
         </div>
       </div>
+
+      <ResolutionModal 
+        isOpen={isResolveModalOpen} 
+        onClose={() => setIsResolveModalOpen(false)} 
+        onConfirm={async (photoUrl) => {
+          const ok = await handlePatch({ status: "RESOLVED", resolutionPhoto: photoUrl });
+          if (ok) setMessage('Complaint officially resolved with AI proof!');
+        }} 
+      />
     </div>
   )
 }
