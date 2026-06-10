@@ -17,7 +17,7 @@ export function useComplaint(id: number | undefined) {
         throw new Error('Invalid complaint id')
       }
       const result = await updateComplaint(id, payload)
-      state.reload()
+      try { state.reload() } catch (_) {}
       return result
     },
     [id, state.reload]
