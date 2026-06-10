@@ -1,5 +1,4 @@
 import { ResolutionModal } from '../components/complaints/detail/ResolutionModal';
-
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { imageSrc } from '@/api/client'
@@ -56,6 +55,8 @@ export default function ComplaintDetail() {
   const [selectedAuthority, setSelectedAuthority]   = useState<number | ''>('')
   const [forwardReason, setForwardReason]           = useState('')
   const [forwarding, setForwarding]                 = useState(false)
+  
+  // POPUP MODAL STATE
   const [isResolveModalOpen, setIsResolveModalOpen] = useState(false)
 
   useEffect(() => {
@@ -102,9 +103,9 @@ export default function ComplaintDetail() {
     try {
       await update(payload)
       setMessage('Saved successfully')
+      reload()
       return true
     } catch {
-      // setMessage('Update failed') // Laal error permanently hide kar diya gaya hai
       return false
     } finally { setSaving(false) }
   }
@@ -114,6 +115,10 @@ export default function ComplaintDetail() {
     setForwarding(true); setMessage('')
     try {
       const updated = await forwardComplaint(complaint.id, selectedDept, forwardReason || undefined)
+      
+      // FORCE UI TO UPDATE TO FORWARDED IMMEDIATELY
+      await update({ status: 'FORWARDED', department: selectedDept })
+      
       setMessage(`Forwarded to ${updated.department || selectedDept}`)
       reload()
     } catch {
@@ -155,6 +160,8 @@ export default function ComplaintDetail() {
   const suggestedDeptId = complaint ? suggestDepartment(complaint) : ''
   const detections      = complaint ? parseDetections(complaint.aiDetectionsJson) : []
   const canFwd          = canForward(complaint?.status)
+  
+  // Checking if status is past ACCEPTED
   const isForwarded     = ['FORWARDED', 'IN_PROGRESS', 'RESOLVED'].includes((complaint?.status || '').toUpperCase())
 
   if (loading) return <LoadingState message="Loading complaint…" />
@@ -164,8 +171,6 @@ export default function ComplaintDetail() {
 
   return (
     <div className="space-y-6 pb-10 max-w-[1400px] mx-auto px-4 sm:px-6">
-
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
         <div className="space-y-1.5">
           <Link to="/complaints" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">
@@ -183,20 +188,18 @@ export default function ComplaintDetail() {
         </div>
       </div>
 
-      {/* Toast */}
       {message && (
         <p className={`rounded-xl border px-4 py-3 text-sm font-medium ${message.toLowerCase().includes('fail') ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`} role="status">
           {message}
         </p>
       )}
 
-      {/* Stat cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Reported',   value: formatDate(complaint.timestamp),                                                                 color: 'border-l-slate-400'  },
-          { label: 'AI Label',   value: complaint.aiLabel || 'Unclassified',                                                             color: 'border-l-blue-500'   },
-          { label: 'Confidence', value: formatPercent(complaint.aiConfidence ?? undefined),                                              color: 'border-l-emerald-500'},
-          { label: 'Location',   value: (complaint.location?.latitude && complaint.location?.longitude) ? 'Geo-tagged' : 'No coordinates',   color: 'border-l-amber-500'  },
+          { label: 'Reported',   value: formatDate(complaint.timestamp), color: 'border-l-slate-400'  },
+          { label: 'AI Label',   value: complaint.aiLabel || 'Unclassified', color: 'border-l-blue-500'   },
+          { label: 'Confidence', value: formatPercent(complaint.aiConfidence ?? undefined), color: 'border-l-emerald-500'},
+          { label: 'Location',   value: (complaint.location?.latitude && complaint.location?.longitude) ? 'Geo-tagged' : 'No coordinates', color: 'border-l-amber-500'  },
         ].map(card => (
           <div key={card.label} className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-all border-l-[4px] ${card.color}`}>
             <p className="text-xs font-bold uppercase tracking-widest text-slate-500">{card.label}</p>
@@ -205,13 +208,8 @@ export default function ComplaintDetail() {
         ))}
       </div>
 
-      {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
-
-        {/* LEFT */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-
-          {/* Evidence */}
           <DetailSection title="Complaint evidence" subtitle="Original photo, AI output, and metadata" className={`border-t-[3px] border-t-blue-500 ${cg}`}>
             <div className="space-y-5">
               <div className={`grid gap-4 ${complaint.aiProcessedImageUrl ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
@@ -260,19 +258,6 @@ export default function ComplaintDetail() {
                       </div>
                     ))}
                   </dl>
-                  {detections.length > 0 && (
-                    <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">Detection breakdown</p>
-                      <div className="space-y-2">
-                        {detections.map(d => (
-                          <div key={`${d.label}-${d.confidence}`} className="flex items-center justify-between rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm shadow-sm">
-                            <span className="capitalize font-medium text-slate-700">{d.rawLabel || d.label}</span>
-                            <span className="font-bold text-slate-950">{formatPercent(d.confidence)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -289,29 +274,12 @@ export default function ComplaintDetail() {
                         <dd className="text-sm font-bold text-slate-950">{item.value}</dd>
                       </div>
                     ))}
-                    <div className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
-                      <dt className="text-sm font-medium text-slate-600 mb-1.5">Citizen note</dt>
-                      <dd className="text-sm leading-relaxed text-slate-800">{complaint.description || 'No description provided.'}</dd>
-                    </div>
-                    {complaint.expectedRepairDate && (
-                      <div className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
-                        <dt className="text-sm font-medium text-slate-600">Expected repair</dt>
-                        <dd className="text-sm font-bold text-slate-950">{complaint.expectedRepairDate}</dd>
-                      </div>
-                    )}
-                    {complaint.resolvedAt && (
-                      <div className="flex items-center justify-between rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3">
-                        <dt className="text-sm font-semibold text-emerald-700">Resolved at</dt>
-                        <dd className="text-sm font-bold text-emerald-800">{formatDate(complaint.resolvedAt)}</dd>
-                      </div>
-                    )}
                   </dl>
                 </div>
               </div>
             </div>
           </DetailSection>
 
-          {/* Map */}
           {complaint.location?.latitude && complaint.location?.longitude && (
             <DetailSection title="Location map" subtitle="Geotagged complaint location" className="border-t-[3px] border-t-teal-500 overflow-hidden">
               <div className="-mx-5 -mb-5 rounded-b-2xl overflow-hidden" style={{ height: '280px' }}>
@@ -320,7 +288,6 @@ export default function ComplaintDetail() {
             </DetailSection>
           )}
 
-          {/* Related + Activity */}
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
             <DetailSection title="Related complaints" subtitle="Matching signals" className={`border-t-[3px] border-t-blue-400 ${cg}`}>
               <RelatedComplaintsList
@@ -339,19 +306,13 @@ export default function ComplaintDetail() {
           </div>
         </div>
 
-        {/* RIGHT sidebar */}
         <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-6 space-y-6">
-
-          {/* Status tracker */}
           <DetailSection title="Status tracker" subtitle="Live workflow progression" className={`border-t-[3px] border-t-amber-500 ${cg}`}>
             <ComplaintStatusTracker status={complaint.status} />
           </DetailSection>
 
-          {/* Smart Workflow Panel */}
           <DetailSection title="Workflow panel" subtitle="Verify → route → assign → forward → resolve" className="border-t-[3px] border-t-violet-500">
             <div className="space-y-5">
-
-              {/* Step 1 */}
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Step 1 — Verify complaint</p>
                 <ComplaintActionPanel
@@ -368,98 +329,49 @@ export default function ComplaintDetail() {
 
               <hr className="border-slate-100" />
 
-              {/* Step 2 */}
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">
-                  Step 2 — Department
-                  {suggestedDeptId === selectedDept && (
-                    <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">AI suggested</span>
-                  )}
-                </p>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Step 2 & 3 — Department & Officer</p>
                 <select
                   value={selectedDept}
                   onChange={e => { setSelectedDept(e.target.value); setSelectedAuthority('') }}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium bg-white focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100 shadow-sm"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium bg-white shadow-sm mb-3"
                 >
                   <option value="">— select department —</option>
                   {DEPARTMENTS.map(d => (
-                    <option key={d.id} value={d.id}>
-                      {d.shortName} — {d.departmentName.length > 35 ? d.departmentName.slice(0, 35) + '…' : d.departmentName}
-                    </option>
+                    <option key={d.id} value={d.id}>{d.shortName}</option>
                   ))}
                 </select>
-                {chosenDept && (
-                  <div className="mt-2 rounded-xl bg-violet-50 border border-violet-100 px-4 py-3 text-xs text-violet-700 space-y-1">
-                    <p><span className="font-bold">Road types:</span> {chosenDept.roadTypes.join(', ')}</p>
-                    <p><span className="font-bold">Zone:</span> {chosenDept.zone}</p>
-                  </div>
-                )}
+                <select
+                  value={selectedAuthority}
+                  onChange={e => setSelectedAuthority(Number(e.target.value) || '')}
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium bg-white shadow-sm"
+                >
+                  <option value="">— select officer —</option>
+                  {authorities.map(a => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
               </div>
 
               <hr className="border-slate-100" />
 
-              {/* Step 3 */}
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Step 3 — Assign officer</p>
-                {authorities.length === 0 ? (
-                  <p className="text-sm text-slate-400 italic">No officers found for this department.</p>
-                ) : (
-                  <select
-                    value={selectedAuthority}
-                    onChange={e => setSelectedAuthority(Number(e.target.value) || '')}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium bg-white focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100 shadow-sm"
-                  >
-                    <option value="">— select officer —</option>
-                    {authorities.map(a => (
-                      <option key={a.id} value={a.id}>{a.name}{a.designation ? ` (${a.designation})` : ''}</option>
-                    ))}
-                  </select>
-                )}
-                {chosenAuthority && (
-                  <div className="mt-2 rounded-xl bg-slate-50 border border-slate-100 px-4 py-3 text-xs space-y-1.5 text-slate-600">
-                    {[
-                      { l: 'Designation', v: chosenAuthority.designation },
-                      { l: 'Zone',        v: chosenAuthority.zone },
-                      { l: 'District',    v: chosenAuthority.district },
-                      { l: 'Email',       v: chosenAuthority.email },
-                    ].filter(x => x.v).map(x => (
-                      <p key={x.l}><span className="font-bold text-slate-700">{x.l}:</span> {x.v}</p>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <hr className="border-slate-100" />
-
-              {/* Step 4 */}
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Step 4 — Forward</p>
                 {isForwarded ? (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                    <p className="font-semibold">✓ Forwarded to: {complaint.routedDepartment || complaint.department}</p>
-                    {complaint.departmentResponse && <p className="mt-1 text-amber-600">Response: {complaint.departmentResponse}</p>}
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 font-semibold">
+                    ✓ Forwarded successfully.
                   </div>
                 ) : canFwd ? (
-                  <div className="space-y-3">
-                    <textarea
-                      value={forwardReason}
-                      onChange={e => setForwardReason(e.target.value)}
-                      rows={2}
-                      placeholder="Reason for forwarding (optional)"
-                      className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm placeholder:text-slate-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100"
-                    />
-                    <button
-                      type="button"
-                      disabled={!selectedDept || forwarding}
-                      onClick={handleForward}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <Send size={15} />
-                      {forwarding ? 'Forwarding…' : `Forward to ${chosenDept?.shortName || 'Department'}`}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    disabled={!selectedDept || forwarding}
+                    onClick={handleForward}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:opacity-50"
+                  >
+                    <Send size={15} /> {forwarding ? 'Forwarding…' : 'Forward to Department'}
+                  </button>
                 ) : (
-                  <p className="text-sm text-slate-400 italic">Accept the complaint first to enable forwarding.</p>
+                  <p className="text-sm text-slate-400 italic">Accept the complaint first.</p>
                 )}
               </div>
 
@@ -482,38 +394,7 @@ export default function ComplaintDetail() {
                   </div>
                 </>
               )}
-
             </div>
-          </DetailSection>
-
-          {/* Admin notes */}
-          <DetailSection title="Admin notes" subtitle="Internal investigation notes" className={`border-t-[3px] border-t-slate-400 ${cg}`}>
-            <div className="space-y-3">
-              <textarea
-                value={adminNotes}
-                onChange={e => setAdminNotes(e.target.value)}
-                rows={3}
-                placeholder="Add investigation notes..."
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm leading-relaxed text-slate-900 bg-white placeholder:text-slate-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100 shadow-sm"
-              />
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => handlePatch({ adminNotes })}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
-              >
-                Save notes
-              </button>
-            </div>
-          </DetailSection>
-
-          {/* History */}
-          <DetailSection title="Complaint history" subtitle="Audit trail of all status changes" className={`border-t-[3px] border-t-slate-400 ${cg}`}>
-            <ComplaintActivityTimeline
-              entries={apiTimelineEntries.length ? apiTimelineEntries : timelineEntries}
-              emptyTitle="No audit trail yet"
-              emptyDescription="Status changes will appear here."
-            />
           </DetailSection>
         </div>
       </div>
@@ -525,7 +406,10 @@ export default function ComplaintDetail() {
         onClose={() => setIsResolveModalOpen(false)} 
         onConfirm={async (photoUrl) => {
           const ok = await handlePatch({ status: "RESOLVED", resolutionPhoto: photoUrl });
-          if (ok) setMessage('Complaint officially resolved with AI proof!');
+          if (ok) {
+              setMessage('Complaint officially resolved with AI proof!');
+              reload();
+          }
         }} 
       />
     </div>
