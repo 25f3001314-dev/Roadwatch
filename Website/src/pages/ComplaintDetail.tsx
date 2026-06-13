@@ -53,7 +53,7 @@ export default function ComplaintDetail() {
   useEffect(() => {
     if (!selectedDept) return
     const dept = DEPARTMENTS.find(d => d.id === selectedDept)
-    fetchAuthorities(dept ? { district: dept.zone } : undefined).then(setAuthorities).catch(() => setAuthorities([]))
+    fetchAuthorities(dept ? { department: dept.shortName } : undefined).then(setAuthorities).catch(() => setAuthorities([]))
   }, [selectedDept])
 
   const handlePatch = async (payload: ComplaintUpdatePayload | any) => {
