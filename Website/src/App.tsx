@@ -13,7 +13,6 @@ const Complaints = lazy(() => import('@/pages/Complaints'))
 const ComplaintDetail = lazy(() => import('@/pages/ComplaintDetail'))
 const ComplaintPipeline = lazy(() => import('@/pages/ComplaintPipeline'))
 const MapView = lazy(() => import('@/pages/MapView'))
-const Officers = lazy(() => import('@/pages/Officers'))
 const RoadInfrastructure = lazy(() => import('@/pages/RoadInfrastructure'))
 const Authorities = lazy(() => import('@/pages/Authorities'))
 const EmergencyCases = lazy(() => import('@/pages/EmergencyCases'))
@@ -107,7 +106,6 @@ export default function App() {
           path="officers"
           element={
             <Suspense fallback={<PageFallback />}>
-              <Officers />
             </Suspense>
           }
         />

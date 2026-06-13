@@ -23,7 +23,6 @@ const NAV_ITEMS = [
   { to: '/resolved-complaints', label: 'Resolved Complaints', icon: FileText, end: false },
   { to: '/map', label: 'Reports & Analytics', icon: BarChart3, end: false },
   { to: '/authorities', label: 'Departments', icon: Briefcase, end: false },
-  { to: '/officers', label: 'Officers / Employees', icon: Users, end: false },
   { to: '/settings', label: 'Settings', icon: Settings2, end: false },
 ] as const
 
