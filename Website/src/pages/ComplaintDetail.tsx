@@ -22,6 +22,16 @@ import { DEPARTMENTS } from '@/data/departments'
 import { canForward } from '@/utils/complaintActions'
 import { Send } from 'lucide-react'
 
+
+const OFFICERS_BY_DEPT: Record<string, { id: string; name: string; username: string }[]> = {
+  dept_pwd_02:  [{ id: 'pwd_officer',         name: 'Rajesh Kumar Singh', username: 'pwd_officer' }],
+  dept_nhai_01: [{ id: 'pwd_officer',         name: 'Rajesh Kumar Singh', username: 'pwd_officer' }],
+  dept_ulb_03:  [{ id: 'civic_officer',       name: 'Sunita Sharma',      username: 'civic_officer' }],
+  dept_jal_04:  [{ id: 'civic_officer',       name: 'Sunita Sharma',      username: 'civic_officer' }],
+  dept_tp_05:   [{ id: 'traffic_officer',     name: 'Amit Verma',         username: 'traffic_officer' }],
+  dept_discom_06:[{ id: 'electricity_officer',name: 'Priya Gupta',        username: 'electricity_officer' }],
+}
+
 function suggestDepartment(complaint: Complaint): string {
   const road = (complaint.roadType || '').toLowerCase()
   const sev  = (complaint.severity || '').toUpperCase()
@@ -39,9 +49,10 @@ export default function ComplaintDetail() {
   const [adminNotes, setAdminNotes]   = useState('')
   const [saving, setSaving]           = useState(false)
   const [message, setMessage]         = useState('')
-  const [authorities, setAuthorities] = useState<Authority[]>([])
+  const [_a, setAuthorities] = useState<Authority[]>([])
   const [selectedDept, setSelectedDept]  = useState('')
   const [forwarding, setForwarding]      = useState(false)
+  const [selectedOfficer, setSelectedOfficer] = useState('')
   const [isResolveModalOpen, setIsResolveModalOpen] = useState(false)
 
   useEffect(() => {
@@ -264,13 +275,22 @@ export default function ComplaintDetail() {
 
               {/* Step 3 */}
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Step 3 — Assign officer</p>
-                <select className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium bg-white shadow-sm">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Step 3 — Assign Officer</p>
+                <select
+                  value={selectedOfficer}
+                  onChange={e => setSelectedOfficer(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium bg-white shadow-sm"
+                >
                   <option value="">— select officer —</option>
-                  {authorities.map(a => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
+                  {(OFFICERS_BY_DEPT[selectedDept] || []).map(o => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
                   ))}
                 </select>
+                {selectedOfficer && (
+                  <p className="mt-1 text-xs text-green-600 font-medium">
+                    ✓ {(OFFICERS_BY_DEPT[selectedDept] || []).find(o => o.id === selectedOfficer)?.name}
+                  </p>
+                )}
               </div>
 
               <hr className="border-slate-100" />
