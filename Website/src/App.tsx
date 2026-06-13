@@ -18,6 +18,7 @@ const Authorities = lazy(() => import('@/pages/Authorities'))
 const EmergencyCases = lazy(() => import('@/pages/EmergencyCases'))
 const ResolvedComplaints = lazy(() => import('@/pages/ResolvedComplaints'))
 const Settings = lazy(() => import('@/pages/Settings'))
+const RoadsBudget = lazy(() => import('@/pages/RoadsBudget'))
 
 function PageFallback() {
   return (
@@ -106,6 +107,7 @@ export default function App() {
           path="officers"
           element={
             <Suspense fallback={<PageFallback />}>
+              <RoadsBudget />
             </Suspense>
           }
         />

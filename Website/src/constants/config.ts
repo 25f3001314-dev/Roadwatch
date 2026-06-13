@@ -35,4 +35,4 @@ export const COMPLAINT_SEVERITIES = ['HIGH', 'MEDIUM', 'LOW'] as const
 
 export type ComplaintStatus = (typeof COMPLAINT_STATUSES)[number]
 export type ComplaintSeverity = (typeof COMPLAINT_SEVERITIES)[number]
-export const API_BASE = ""
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ""
