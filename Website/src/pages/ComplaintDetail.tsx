@@ -353,6 +353,55 @@ export default function ComplaintDetail() {
         </div>
       </div>
 
+      {/* PENDING_APPROVAL Section */}
+      {complaint.status === 'PENDING_APPROVAL' && (
+        <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-amber-800 mb-2">Officer Resolution Pending Approval</h3>
+          <p className="text-sm text-amber-700 mb-4">Officer ne proof submit kiya hai. Verify karke approve ya reject karo.</p>
+          {complaint.resolutionProofUrl && (
+            <div className="mb-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Resolution Proof</p>
+              <img src={imageSrc(complaint.resolutionProofUrl)} alt="Resolution proof" className="h-48 w-full object-contain rounded-xl border border-amber-200 bg-white" />
+            </div>
+          )}
+          {complaint.adminNotes && (
+            <div className="mb-4 rounded-xl bg-white border border-amber-200 px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Officer Remarks</p>
+              <p className="text-sm text-slate-800">{complaint.adminNotes}</p>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={async () => {
+                try {
+                  const API = import.meta.env.VITE_API_BASE_URL || 'https://roadwatch-api.duckdns.org'
+                  await fetch(API + '/api/complaints/' + complaint.id + '/approve-resolution', { method: 'POST' })
+                  setMessage('Resolution approved! Complaint resolved.')
+                  reload()
+                } catch { setMessage('Error approving') }
+              }}
+              className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-700"
+            >
+              Approve and Resolve
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  const API = import.meta.env.VITE_API_BASE_URL || 'https://roadwatch-api.duckdns.org'
+                  const body = JSON.stringify({reason: 'Proof insufficient'})
+                  await fetch(API + '/api/complaints/' + complaint.id + '/reject-resolution', { method: 'POST', headers: {'Content-Type':'application/json'}, body: body })
+                  setMessage('Resolution rejected. Sent back to officer.')
+                  reload()
+                } catch { setMessage('Error rejecting') }
+              }}
+              className="flex-1 rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white hover:bg-rose-700"
+            >
+              Reject
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Resolution Modal */}
       <ResolutionModal 
         isOpen={isResolveModalOpen} 
