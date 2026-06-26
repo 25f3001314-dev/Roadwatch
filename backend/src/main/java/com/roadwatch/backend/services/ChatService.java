@@ -20,6 +20,7 @@ public class ChatService {
     private final MaintenanceScheduleRepository maintenanceScheduleRepository;
     private final ContractorRepository contractorRepository;
     private final AuthorityRepository authorityRepository;
+    private final ComplaintRepository complaintRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${roadwatch.chat.mistral.api-key}")
@@ -97,6 +98,19 @@ public class ChatService {
             }
 
             dbContext.append("\n");
+        }
+
+        // Complaints data
+        List<Complaint> complaints = complaintRepository.findAll();
+        dbContext.append("\nRecent Complaints:\n");
+        for (Complaint c : complaints.subList(0, Math.min(complaints.size(), 20))) {
+            dbContext.append(String.format("- Complaint #%d | Road Type: %s | Status: %s | Dept: %s | Location: %s | Date: %s\n",
+                    c.getId(),
+                    c.getRoadType() != null ? c.getRoadType() : "N/A",
+                    c.getStatus() != null ? c.getStatus() : "N/A",
+                    c.getDepartment() != null ? c.getDepartment() : "N/A",
+                    c.getLocation() != null ? c.getLocation() : "N/A",
+                    c.getCreatedAt() != null ? c.getCreatedAt() : "N/A"));
         }
 
         String systemPrompt = "You are RoadWatch AI, an intelligent civic assistant for India's road infrastructure. " +
