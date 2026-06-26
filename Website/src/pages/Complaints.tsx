@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { formatDate } from '@/utils/format'
+import { useAuth } from '@/context/AuthContext'
 
 export default function Complaints() {
   const [complaints, setComplaints] = useState<Complaint[]>([])
@@ -17,11 +18,14 @@ export default function Complaints() {
   const [totalElements, setTotalElements] = useState(0)
   const [filters, setFilters] = useState<ComplaintFilters>({})
 
+  const { isOfficer, officerDept } = useAuth()
+
   const load = async (f: ComplaintFilters = {}) => {
     setLoading(true)
     setError(null)
     try {
-      const result = await fetchComplaints({ ...f, size: 20 })
+      const officerOverride = isOfficer ? { status: 'FORWARDED' } : {}
+      const result = await fetchComplaints({ ...f, ...officerOverride, size: 20 })
       setComplaints(result.content)
       setTotalPages(result.totalPages)
       setTotalElements(result.totalElements)

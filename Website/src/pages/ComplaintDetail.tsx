@@ -112,9 +112,7 @@ export default function ComplaintDetail() {
 
   const chosenDept  = DEPARTMENTS.find(d => d.id === selectedDept)
   const canFwd      = canForward(complaint?.status)
-  const isForwarded = ['FORWARDED', 'IN_PROGRESS', 'PENDING_APPROVAL', 'RESOLVED'].includes(
-    (complaint?.status || '').toUpperCase()
-  )
+  const isForwarded = (complaint?.status || '').toUpperCase() === 'FORWARDED'
 
   if (loading) return <LoadingState message="Loading complaint…" />
   if (error || !complaint) return <ErrorState message={error || 'Complaint not found'} onRetry={reload} />
