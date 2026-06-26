@@ -60,7 +60,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/complaints/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/complaints/*/timeline").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/complaints/*/feedback").permitAll()
-                        .requestMatchers("/api/**").authenticated()
+                        
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
