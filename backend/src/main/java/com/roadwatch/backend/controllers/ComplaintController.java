@@ -127,8 +127,8 @@ public class ComplaintController {
     public ResponseEntity<ResolutionVerificationResult> submitResolutionProof(
             @PathVariable Long id,
             @RequestParam("image") MultipartFile image,
-            @RequestParam("officerLat") Double officerLat,
-            @RequestParam("officerLng") Double officerLng,
+            @RequestParam("officerLat") String officerLat,
+            @RequestParam("officerLng") String officerLng,
             @RequestParam("photoTimestampMs") Long photoTimestampMs) {
         ResolutionProofRequest req = new ResolutionProofRequest();
         req.setOfficerLat(officerLat);

@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class ResolutionVerificationService {
     private static final Logger logger = LoggerFactory.getLogger(ResolutionVerificationService.class);
-    @Value("${roadwatch.resolution.max-distance-meters:20.0}")
+    @Value("${roadwatch.resolution.max-distance-meters:10.0}")
     private double maxDistanceMeters;
     @Value("${roadwatch.resolution.max-photo-age-minutes:5}")
     private long maxPhotoAgeMinutes;
@@ -38,6 +38,7 @@ public class ResolutionVerificationService {
     public ResolutionVerificationResult verifyAndResolve(Long complaintId, MultipartFile proofImage, ResolutionProofRequest req) {
         if (proofImage == null || proofImage.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Proof image required");
         if (req.getOfficerLat() == null || req.getOfficerLng() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "GPS required");
+        if (req.getOfficerLatValue() == null || req.getOfficerLngValue() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid GPS format");
         if (req.getPhotoTimestampMs() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Timestamp required");
         Complaint complaint = complaintRepository.findById(complaintId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found"));
         if (complaint.getLocation() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No GPS on complaint");
@@ -51,7 +52,7 @@ public class ResolutionVerificationService {
         if (photoAgeMs > maxAgeMs) return ResolutionVerificationResult.fail("TIMESTAMP", "Photo " + (photoAgeMs/60000) + " min purani hai.");
         double complaintLat = complaint.getLocation().getY();
         double complaintLng = complaint.getLocation().getX();
-        double dist = haversineMeters(complaintLat, complaintLng, req.getOfficerLat(), req.getOfficerLng());
+        double dist = haversineMeters(complaintLat, complaintLng, req.getOfficerLatValue(), req.getOfficerLngValue());
         if (dist > maxDistanceMeters) return ResolutionVerificationResult.fail("GPS", String.format("Aap %.0fm door hain. %.0fm ke andar aao.", dist, maxDistanceMeters));
         try {
             AiAnalysisResponseDto ai = aiServiceClient.analyzeImage(proofImage, "/analyze_surface");
