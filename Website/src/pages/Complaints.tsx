@@ -26,7 +26,10 @@ export default function Complaints() {
     try {
       const officerOverride = isOfficer ? { status: 'FORWARDED' } : {}
       const result = await fetchComplaints({ ...f, ...officerOverride, size: 20 })
-      setComplaints(result.content)
+      const filtered = isOfficer && officerDept
+        ? result.content.filter(x => x.routedDepartment === officerDept)
+        : result.content
+      setComplaints(filtered)
       setTotalPages(result.totalPages)
       setTotalElements(result.totalElements)
     } catch {
