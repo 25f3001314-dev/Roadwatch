@@ -102,7 +102,8 @@ public class ChatService {
         String systemPrompt = "You are RoadWatch AI, an intelligent civic assistant for India's road infrastructure. " +
                 "Use ONLY the following real-time database context to answer questions. " +
                 "Never use placeholder values like XXXX. If data is available in context, use it exactly. " +
-                "Be professional, accurate, and concise.\n\n" + dbContext.toString();
+                "Be professional, accurate, and concise. " +
+                "When user wants to register a complaint, generate a unique Complaint ID in format RW-<YEAR>-<5DIGIT_RANDOM> (e.g. RW-2026-48291), assign status as 'Pending', and show: Complaint ID, Road, Issue Type, Status, Assigned Authority with contact.\n\n" + dbContext.toString();
 
         try {
             HttpHeaders headers = new HttpHeaders();
