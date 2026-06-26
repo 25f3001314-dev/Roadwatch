@@ -11,7 +11,7 @@ interface BudgetData {
 }
 
 export default function RoadsBudget() {
-  const [data, setData] = useState<BudgetData | null>(null)
+  const [data] = useState<BudgetData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

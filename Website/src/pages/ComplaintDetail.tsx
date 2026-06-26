@@ -16,7 +16,6 @@ import { DetailSection } from '@/components/complaints/detail/DetailSection'
 import { ComplaintStatusTracker } from '@/components/complaints/detail/ComplaintStatusTracker'
 import { ComplaintActivityTimeline, buildLiveComplaintTimeline } from '@/components/complaints/detail/ComplaintActivityTimeline'
 import { RelatedComplaintsList } from '@/components/complaints/detail/RelatedComplaintsList'
-import { ComplaintActionPanel } from '@/components/complaints/ComplaintActionPanel'
 import { ComplaintMap } from '@/components/map/ComplaintMap'
 import { DEPARTMENTS } from '@/data/departments'
 import { canForward } from '@/utils/complaintActions'
@@ -110,7 +109,6 @@ export default function ComplaintDetail() {
     [adminNotes, complaint]
   )
 
-  const chosenDept  = DEPARTMENTS.find(d => d.id === selectedDept)
   const canFwd      = canForward(complaint?.status)
   const isForwarded = (complaint?.status || '').toUpperCase() === 'FORWARDED'
 
@@ -182,3 +180,90 @@ export default function ComplaintDetail() {
                     <p className="text-xs font-bold uppercase tracking-widest text-slate-500">AI processed</p>
                   </div>
                           <img src={imageSrc(complaint.aiProcessedImageUrl)} alt="AI" className="h-64 w-full object-contain bg-slate-50" />
+                                          </figure>
+              )}
+            </div>
+          </DetailSection>
+
+          {complaint.location?.latitude && complaint.location?.longitude && (
+            <DetailSection title="Location" subtitle="Complaint site on map" className={"border-t-[3px] border-t-amber-500 " + cg}>
+              <ComplaintMap complaints={[complaint]} />
+            </DetailSection>
+          )}
+
+          <DetailSection title="Recent activity" subtitle="Audit trail" className={"border-t-[3px] border-t-slate-300 " + cg}>
+            <ComplaintActivityTimeline entries={timelineEntries} emptyTitle="No activity yet" emptyDescription="Actions will appear here" />
+          </DetailSection>
+
+          {relatedComplaints.length > 0 && <RelatedComplaintsList complaints={relatedComplaints} emptyTitle="No related complaints" emptyDescription="No similar complaints nearby" />}
+        </div>
+
+        {/* RIGHT */}
+        <div className="lg:col-span-5 space-y-6">
+          <ComplaintStatusTracker status={complaint.status} />
+
+          <DetailSection title="Assign & Forward" subtitle="Route to department" className={"border-t-[3px] border-t-indigo-500 " + cg}>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5 block">Step 1 — Select department</label>
+                <select value={selectedDept} onChange={e => setSelectedDept(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                  {DEPARTMENTS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5 block">Step 2 — Assign officer</label>
+                <select value={selectedOfficer} onChange={e => setSelectedOfficer(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                  <option value="">— select officer —</option>
+                  {(OFFICERS_BY_DEPT[selectedDept] || []).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">Step 3 — Forward</p>
+                {isForwarded ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+                    ✓ Already forwarded to: {(complaint as any).routedDepartment || selectedDept}
+                  </div>
+                ) : (
+                  <button onClick={handleForward} disabled={!canFwd || forwarding}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors">
+                    <Send size={14} /> {forwarding ? 'Forwarding…' : 'Forward to department'}
+                  </button>
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">Step 4 — Mark resolved</p>
+                {complaint.status === 'RESOLVED' ? (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">✅ Complaint resolved hai</div>
+                ) : (
+                  <button onClick={() => setIsResolveModalOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors">
+                    🖼️ Verify Final Proof & Resolve
+                  </button>
+                )}
+              </div>
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Admin notes" subtitle="Internal investigation notes" className={cg}>
+            <textarea value={adminNotes} onChange={e => setAdminNotes(e.target.value)}
+              placeholder="Add investigation notes..." rows={4}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300 resize-none" />
+            <button onClick={() => handlePatch({ adminNotes })} disabled={saving}
+              className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition-colors">
+              {saving ? 'Saving…' : 'Save notes'}
+            </button>
+          </DetailSection>
+        </div>
+      </div>
+
+      <ResolutionModal
+        isOpen={isResolveModalOpen}
+        onClose={() => setIsResolveModalOpen(false)}
+        proofImageUrl={complaint.resolutionProofUrl}
+        onConfirm={async () => { await handlePatch({ status: "RESOLVED" }) }}
+      />
+    </div>
+  )
+}

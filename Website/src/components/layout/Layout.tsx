@@ -10,7 +10,6 @@ import {
   Route,
   Settings2,
   ShieldAlert,
-  Users,
   Wallet,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
