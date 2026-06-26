@@ -1,0 +1,62 @@
+[
+  {
+    "authorityId": "AUTH-NHAI",
+    "name": "National Highway Authority of India",
+    "type": "Central Govt",
+    "state": "National",
+    "contactEmail": "grievance@nhai.gov.in",
+    "phone": "1800-11-7777",
+    "zone": "National",
+    "district": "New Delhi",
+    "efficiencyScore": 85,
+    "jurisdiction": ["NH"]
+  },
+  {
+    "authorityId": "AUTH-UP-PWD",
+    "name": "Uttar Pradesh PWD",
+    "type": "State PWD",
+    "state": "Uttar Pradesh",
+    "contactEmail": "pwd-up@gov.in",
+    "phone": "0522-2236318",
+    "zone": "North",
+    "district": "Lucknow",
+    "efficiencyScore": 72,
+    "jurisdiction": ["SH", "MDR"]
+  },
+  {
+    "authorityId": "AUTH-BBMP",
+    "name": "Bruhat Bengaluru Mahanagara Palike",
+    "type": "Municipal Corp",
+    "state": "Karnataka",
+    "contactEmail": "commissioner@bbmp.gov.in",
+    "phone": "080-22660000",
+    "zone": "South",
+    "district": "Bengaluru",
+    "efficiencyScore": 78,
+    "jurisdiction": ["City Road"]
+  },
+  {
+    "authorityId": "AUTH-WB-NHAI",
+    "name": "NHAI Bengal Zone",
+    "type": "Central Govt",
+    "state": "West Bengal",
+    "contactEmail": "bengal-ops@nhai.gov.in",
+    "phone": "033-23576726",
+    "zone": "East",
+    "district": "Kolkata",
+    "efficiencyScore": 80,
+    "jurisdiction": ["NH"]
+  },
+  {
+    "authorityId": "AUTH-GUJ-RB",
+    "name": "Gujarat Roads & Buildings Dept",
+    "type": "State R&B",
+    "state": "Gujarat",
+    "contactEmail": "rbd-guj@gujarat.gov.in",
+    "phone": "079-23250551",
+    "zone": "West",
+    "district": "Gandhinagar",
+    "efficiencyScore": 82,
+    "jurisdiction": ["SH", "MDR"]
+  }
+]

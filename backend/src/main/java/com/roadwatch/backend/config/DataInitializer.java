@@ -32,6 +32,7 @@ public class DataInitializer implements CommandLineRunner {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Map<String, Long> roadCodeToId = new HashMap<>();
     private final Map<String, Long> contractorCodeToId = new HashMap<>();
+    private final Map<String, String> contractorCodeToName = new HashMap<>();
 
     @Override
     @Transactional
@@ -41,9 +42,9 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
         log.info("🌱 Seed data loading shuru...");
-        loadRoads();
         loadAuthorities();
         loadContractors();
+        loadRoads();
         loadBudgets();
         loadRepairHistory();
         loadMaintenanceSchedules();
@@ -54,15 +55,24 @@ public class DataInitializer implements CommandLineRunner {
         JsonNode arr = readJson("seed_data/roads.json");
         for (JsonNode n : arr) {
             Road road = new Road();
-            String code = n.path("roadCode").asText("");
+            String code = n.path("roadId").asText("");
+            if (code.isEmpty()) { log.warn("Road skip missing roadId: {}", n); continue; }
             road.setRoadCode(code);
-            road.setName(n.path("name").asText(""));
+            road.setName(n.path("roadName").asText(""));
             road.setRoadType(n.path("roadType").asText(""));
-            road.setCurrentCondition(toTitleCase(n.path("currentCondition").asText("UNKNOWN")));
-            road.setHealthScore(n.path("healthScore").asInt(0));
-            road.setLengthKm(n.path("length").asDouble(0.0));
+            road.setCurrentCondition(toTitleCase(n.path("condition").asText("UNKNOWN")));
+            road.setHealthScore(n.path("roadHealthScore").asInt(0));
+            road.setLengthKm(n.path("lengthKm").asDouble(0.0));
             road.setState(n.path("state").asText(""));
             road.setDistrict(n.path("district").asText(""));
+            if (!n.path("lastRelayingDate").asText("").isEmpty()) {
+                road.setLastRelayingDate(LocalDate.parse(n.path("lastRelayingDate").asText("")));
+            }
+            String contractorCode = n.path("contractorId").asText("");
+            if (!contractorCode.isEmpty() && contractorCodeToId.get(contractorCode) != null) {
+                road.setContractorId(contractorCodeToId.get(contractorCode));
+                road.setContractorName(contractorCodeToName.get(contractorCode));
+            }
             Road saved = roadRepository.save(road);
             roadCodeToId.put(code, saved.getId());
         }
@@ -74,7 +84,7 @@ public class DataInitializer implements CommandLineRunner {
         for (JsonNode n : arr) {
             Authority auth = new Authority();
             auth.setName(n.path("name").asText(""));
-            auth.setEmail(n.path("email").asText(""));
+            auth.setEmail(n.path("contactEmail").asText(""));
             auth.setPhone(n.path("phone").asText(""));
             auth.setDistrict(n.path("district").asText(""));
             auth.setState(n.path("state").asText(""));
@@ -92,14 +102,17 @@ public class DataInitializer implements CommandLineRunner {
             Contractor con = new Contractor();
             String code = n.path("contractorId").asText("");
             con.setRegistrationNumber(code);
-            con.setName(n.path("name").asText(""));
+            String name = n.path("name").asText("");
+            con.setName(name);
             con.setContactEmail(n.path("email").asText(""));
             con.setContactPhone(n.path("phone").asText(""));
             con.setPerformanceScore(n.path("rating").asDouble(0.0));
             con.setTotalProjectsActive(n.path("activeProjects").asInt(0));
-            con.setTotalProjectsCompleted(n.path("completedProjects").asInt(0));
+            con.setTotalProjectsCompleted(n.path("projectsCompleted").asInt(0));
+            con.setBlacklisted(n.path("blacklisted").asBoolean(false));
             Contractor saved = contractorRepository.save(con);
             contractorCodeToId.put(code, saved.getId());
+            contractorCodeToName.put(code, name);
         }
         log.info("✅ Contractors loaded: {}", contractorRepository.count());
     }
@@ -110,11 +123,16 @@ public class DataInitializer implements CommandLineRunner {
             Budget budget = new Budget();
             String roadCode = n.path("roadId").asText("");
             if (roadCodeToId.get(roadCode) == null) { log.warn("Budget skip: {}", roadCode); continue; }
-            budget.setRoadName(n.path("roadName").asText(""));
-            budget.setRoadType(n.path("roadType").asText(""));
-            budget.setContractorName(n.path("contractorName").asText(""));
-            budget.setAmountSanctioned(BigDecimal.valueOf(n.path("totalBudget").asDouble(0.0)));
+            budget.setRoadId(roadCodeToId.get(roadCode));
+            budget.setAmountSanctioned(BigDecimal.valueOf(n.path("sanctionedAmount").asDouble(0.0)));
             budget.setAmountSpent(BigDecimal.valueOf(n.path("spentAmount").asDouble(0.0)));
+            roadRepository.findByRoadCode(roadCode).ifPresent(road -> {
+                budget.setRoadName(road.getName());
+                budget.setRoadType(road.getRoadType());
+                if (road.getContractorId() != null) {
+                    contractorRepository.findById(road.getContractorId()).ifPresent(c -> budget.setContractorName(c.getName()));
+                }
+            });
             budgetRepository.save(budget);
         }
         log.info("✅ Budgets loaded: {}", budgetRepository.count());
@@ -126,10 +144,12 @@ public class DataInitializer implements CommandLineRunner {
             RepairHistory rh = new RepairHistory();
             String roadCode = n.path("roadId").asText("");
             if (roadCodeToId.get(roadCode) == null) { log.warn("RepairHistory skip: {}", roadCode); continue; }
-            String startStr = n.path("startDate").asText("");
-            String endStr = n.path("endDate").asText("");
-            if (!startStr.isEmpty()) rh.setStartDate(LocalDate.parse(startStr));
-            if (!endStr.isEmpty()) rh.setCompletionDate(LocalDate.parse(endStr));
+            String repairDate = n.path("repairDate").asText("");
+            if (!repairDate.isEmpty()) rh.setStartDate(LocalDate.parse(repairDate));
+            rh.setRepairType(n.path("issueType").asText(""));
+            rh.setStatus(n.path("status").asText(""));
+            rh.setActualCost(new BigDecimal(n.path("repairCost").asLong(0)));
+            rh.setRoadId(roadCodeToId.get(roadCode));
             repairHistoryRepository.save(rh);
         }
         log.info("✅ RepairHistory loaded: {}", repairHistoryRepository.count());
@@ -141,8 +161,12 @@ public class DataInitializer implements CommandLineRunner {
             MaintenanceSchedule ms = new MaintenanceSchedule();
             String roadCode = n.path("roadId").asText("");
             if (roadCodeToId.get(roadCode) == null) { log.warn("MaintenanceSchedule skip: {}", roadCode); continue; }
-            String scheduledStr = n.path("scheduledDate").asText("");
+            String scheduledStr = n.path("nextInspectionDate").asText("");
             if (!scheduledStr.isEmpty()) ms.setScheduledDate(LocalDate.parse(scheduledStr));
+            ms.setMaintenanceType(n.path("plannedMaintenance").asText(""));
+            ms.setStatus(n.path("status").asText(""));
+            ms.setRemarks(n.path("plannedMaintenance").asText(""));
+            ms.setRoadId(roadCodeToId.get(roadCode));
             maintenanceScheduleRepository.save(ms);
         }
         log.info("✅ MaintenanceSchedules loaded: {}", maintenanceScheduleRepository.count());

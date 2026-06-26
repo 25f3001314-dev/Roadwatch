@@ -13,4 +13,6 @@ public interface AuthorityRepository
     List<Authority> findByDepartment(String department);
     List<Authority> findByDistrict(String district);
     List<Authority> findByDepartmentAndDistrict(String department, String district);
+    List<Authority> findByStateAndDepartment(String state, String department);
+
 }

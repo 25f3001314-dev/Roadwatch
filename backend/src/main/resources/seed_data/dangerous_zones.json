@@ -1,0 +1,43 @@
+[
+  {
+    "zoneId": "DZ-BLR-001",
+    "roadId": "ORR-BLR-003",
+    "state": "Karnataka",
+    "district": "Bengaluru",
+    "latitude": 12.9279,
+    "longitude": 77.6271,
+    "dangerScore": 96,
+    "reason": "Severe waterlogging and massive craters, frequent accidents reported."
+  },
+  {
+    "zoneId": "DZ-KOL-002",
+    "roadId": "NH-34-KOL-009",
+    "state": "West Bengal",
+    "district": "Kolkata",
+    "latitude": 22.6321,
+    "longitude": 88.4312,
+    "dangerScore": 89,
+    "reason": "Road cave-in near flyover pillar, high traffic congestion."
+  },
+  {
+    "zoneId": "DZ-LKO-003",
+    "roadId": "NH-27-LKO-001",
+    "state": "Uttar Pradesh",
+    "district": "Lucknow",
+    "latitude": 26.8467,
+    "longitude": 80.9462,
+    "dangerScore": 75,
+    "reason": "Continuous deterioration of top layer, low visibility at night."
+  },
+  {
+    "zoneId": "DZ-LUD-004",
+    "roadId": "SH-12-LUD-014",
+    "state": "Punjab",
+    "district": "Ludhiana",
+    "latitude": 30.9009,
+    "longitude": 75.8572,
+    "dangerScore": 82,
+    "reason": "Deep potholes causing two-wheeler accidents, no streetlights."
+  }
+]
+

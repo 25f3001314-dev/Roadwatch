@@ -78,15 +78,5 @@
     "remainingAmount": 180000000,
     "fundingSource": "State Govt",
     "flaggedForAudit": false
-  },
-  {
-    "budgetId": "BUD-009",
-    "roadId": "NH-44-HYD-007",
-    "financialYear": "2025-26",
-    "sanctionedAmount": 125000000,
-    "spentAmount": 85000000,
-    "remainingAmount": 40000000,
-    "fundingSource": "Central Govt",
-    "flaggedForAudit": false
   }
 ]

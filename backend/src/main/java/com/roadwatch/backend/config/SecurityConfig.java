@@ -46,6 +46,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/roads/*/lifecycle").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/complaints/*/timeline").permitAll()
                         .requestMatchers("/api/citizen/**").permitAll()
+                        // FIXED: Corrected endpoint path
+                        .requestMatchers(HttpMethod.POST, "/api/ai/chat").permitAll() 
+                        // FIXED: Line corrected below
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info", "/error").permitAll()
                         .requestMatchers("/health").permitAll()

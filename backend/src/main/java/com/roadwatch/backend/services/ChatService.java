@@ -37,13 +37,11 @@ public class ChatService {
 
         for (Road road : roads.subList(0, Math.min(roads.size(), 15))) {
 
-            // 1. Basic Road Details
             dbContext.append(String.format("- Road: %s (%s), Type: %s, District: %s, State: %s, Condition: %s, Health Score: %d\n",
                     road.getName(), road.getRoadCode(), road.getRoadType(),
                     road.getDistrict(), road.getState(),
                     road.getCurrentCondition(), road.getHealthScore()));
 
-            // 2. Contractor Details
             if (road.getContractorId() != null) {
                 contractorRepository.findById(road.getContractorId()).ifPresent(c -> {
                     dbContext.append(String.format("  -> Contractor: %s | Phone: %s | Email: %s | Rating: %.1f | Blacklisted: %s\n",
@@ -55,9 +53,9 @@ public class ChatService {
                 });
             }
 
-            // 3. Authority Details
-            authorityRepository.findByStateAndDepartment(road.getState(), "Central Govt")
-                .stream().findFirst().ifPresent(auth -> {
+            authorityRepository.findAll().stream()
+                .filter(a -> "Central Govt".equals(a.getDepartment()) || "National".equals(a.getState()))
+                .findFirst().ifPresent(auth -> {
                     dbContext.append(String.format("  -> Authority: %s | Email: %s | Phone: %s | Zone: %s\n",
                             auth.getName(),
                             auth.getEmail() != null ? auth.getEmail() : "N/A",
@@ -65,36 +63,33 @@ public class ChatService {
                             auth.getZone() != null ? auth.getZone() : "N/A"));
                 });
 
-            // 4. Budget Details
             budgetRepository.findByRoadId(road.getId()).ifPresent(budget -> {
-                dbContext.append(String.format("  -> Budget: Sanctioned ₹%s | Spent ₹%s\n",
+                dbContext.append(String.format("  -> Budget: Sanctioned Rs.%s | Spent Rs.%s\n",
                         budget.getAmountSanctioned(), budget.getAmountSpent()));
             });
 
-            // 5. Repair History - actual details
             List<RepairHistory> repairs = repairHistoryRepository.findByRoadId(road.getId());
             if (!repairs.isEmpty()) {
                 dbContext.append(String.format("  -> Repair History (%d records):\n", repairs.size()));
                 for (RepairHistory rh : repairs) {
-                    dbContext.append(String.format("     * %s | Date: %s | Cost: ₹%s | Status: %s\n",
-                            rh.getIssueType() != null ? rh.getIssueType() : "General Repair",
+                    dbContext.append(String.format("     * %s | Date: %s | Cost: Rs.%s | Status: %s\n",
+                            rh.getRepairType() != null ? rh.getRepairType() : "General Repair",
                             rh.getStartDate() != null ? rh.getStartDate() : "N/A",
-                            rh.getCost() != null ? rh.getCost() : "N/A",
+                            rh.getActualCost() != null ? rh.getActualCost() : "N/A",
                             rh.getStatus() != null ? rh.getStatus() : "N/A"));
                 }
             } else {
                 dbContext.append("  -> Repair History: No records.\n");
             }
 
-            // 6. Maintenance Schedule - actual details
             List<MaintenanceSchedule> schedules = maintenanceScheduleRepository.findByRoadId(road.getId());
             if (!schedules.isEmpty()) {
                 dbContext.append(String.format("  -> Maintenance Schedule (%d tasks):\n", schedules.size()));
                 for (MaintenanceSchedule ms : schedules) {
-                    dbContext.append(String.format("     * %s | Date: %s | Budget: ₹%s | Status: %s\n",
+                    dbContext.append(String.format("     * %s | Date: %s | Remarks: %s | Status: %s\n",
                             ms.getMaintenanceType() != null ? ms.getMaintenanceType() : "General",
                             ms.getScheduledDate() != null ? ms.getScheduledDate() : "N/A",
-                            ms.getEstimatedCost() != null ? ms.getEstimatedCost() : "N/A",
+                            ms.getRemarks() != null ? ms.getRemarks() : "N/A",
                             ms.getStatus() != null ? ms.getStatus() : "N/A"));
                 }
             } else {

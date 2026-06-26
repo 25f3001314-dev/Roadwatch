@@ -18,6 +18,7 @@ public class Budget {
 
     private BigDecimal amountSanctioned;
     private BigDecimal amountSpent;
+    private Long roadId;
 
     private LocalDate lastRelayingDate;
 
@@ -35,6 +36,8 @@ public class Budget {
     public void setAmountSanctioned(BigDecimal amountSanctioned) { this.amountSanctioned = amountSanctioned; }
     public BigDecimal getAmountSpent() { return amountSpent; }
     public void setAmountSpent(BigDecimal amountSpent) { this.amountSpent = amountSpent; }
+    public Long getRoadId() { return roadId; }
+    public void setRoadId(Long roadId) { this.roadId = roadId; }
     public LocalDate getLastRelayingDate() { return lastRelayingDate; }
     public void setLastRelayingDate(LocalDate lastRelayingDate) { this.lastRelayingDate = lastRelayingDate; }
 }

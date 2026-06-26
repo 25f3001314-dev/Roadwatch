@@ -10,31 +10,22 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.OffsetDateTime;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Structured error envelope used across the entire API.
- *
- * Shape:
- * <pre>
- * {
- *   "timestamp": "2025-01-01T12:34:56Z",
- *   "status": 400,
- *   "error": "Bad Request",
- *   "message": "...",
- *   "details": [...]   // optional, for validation errors
- * }
- * </pre>
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Void> handleNoResource(NoResourceFoundException ex) {
+        return ResponseEntity.notFound().build();
+    }
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, Object>> handleStatus(ResponseStatusException ex) {
@@ -85,7 +76,6 @@ public class GlobalExceptionHandler {
         if (details != null && !details.isEmpty()) {
             body.put("details", details);
         }
-        // Echo body shape for backwards-compat with old { error: "..." } consumers.
         body.put("legacyError", message);
         return ResponseEntity.status(status).body(body);
     }

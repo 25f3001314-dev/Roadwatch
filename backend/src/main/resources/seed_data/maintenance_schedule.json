@@ -26,13 +26,12 @@
     "plannedMaintenance": "Emergency Monsoon Prep",
     "estimatedBudget": 8000000,
     "status": "High Priority"
-  }  ,
+  },
   {
     "roadId": "NH-44-HYD-007",
     "nextInspectionDate": "2026-08-20",
-    "plannedMaintenance": "Crack Sealing & Remarking",
+    "plannedMaintenance": "Crack Sealing and Remarking",
     "estimatedBudget": 4500000,
     "status": "Scheduled"
   }
-
 ]

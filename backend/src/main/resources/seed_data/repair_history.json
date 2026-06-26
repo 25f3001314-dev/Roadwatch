@@ -98,7 +98,7 @@
     "repairCost": 95000,
     "status": "Completed",
     "durabilityDays": 180
-  }  ,
+  },
   {
     "repairId": "REP-1011",
     "roadId": "NH-44-HYD-007",
@@ -119,5 +119,4 @@
     "status": "Completed",
     "durabilityDays": 90
   }
-
 ]
