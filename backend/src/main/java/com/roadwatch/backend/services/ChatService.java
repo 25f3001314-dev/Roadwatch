@@ -110,7 +110,7 @@ public class ChatService {
                     c.getStatus() != null ? c.getStatus() : "N/A",
                     c.getDepartment() != null ? c.getDepartment() : "N/A",
                     c.getLocation() != null ? c.getLocation() : "N/A",
-                    c.getCreatedAt() != null ? c.getCreatedAt() : "N/A"));
+                    c.getTimestamp() != null ? c.getTimestamp() : "N/A"));
         }
 
         String systemPrompt = "You are RoadWatch AI, an intelligent civic assistant for India's road infrastructure. " +
