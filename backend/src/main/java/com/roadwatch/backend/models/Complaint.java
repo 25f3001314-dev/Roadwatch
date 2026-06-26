@@ -36,6 +36,9 @@ public class Complaint {
     @JsonSerialize(using = PointToJsonSerializer.class)
     private Point location;
 
+    @Column(name = "upvotes")
+    private Integer upvotes = 0;
+
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Kolkata")
@@ -114,6 +117,9 @@ public class Complaint {
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public Point getLocation() { return location; }
     public void setLocation(Point location) { this.location = location; }
+
+    public Integer getUpvotes() { return upvotes; }
+    public void setUpvotes(Integer upvotes) { this.upvotes = upvotes; }
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
     public String getSeverity() { return severity; }

@@ -76,4 +76,9 @@ public class CitizenController {
                 "note", "Push notifications will be enabled when FCM is configured"
         ));
     }
+
+    @GetMapping("/me/complaints")
+    public List<Complaint> meComplaints() {
+        return complaintRepository.findAll();
+    }
 }
